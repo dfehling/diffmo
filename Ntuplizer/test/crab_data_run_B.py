@@ -3,7 +3,7 @@ config = Configuration()
 
 config.section_('General')
 config.General.transferOutputs = True
-config.General.requestName = 'Data_Run_B_v4'
+config.General.requestName = 'Data_Run_B_v5'
 
 config.section_('JobType')
 config.JobType.psetName = 'hadronic.py'
@@ -21,7 +21,7 @@ config.Data.inputDataset = '/JetHT/StoreResults-Run2012B_22Jan2013_TLBSM_53x_016
 config.Data.unitsPerJob = 80
 config.Data.splitting = 'LumiBased'
 config.Data.lumiMask = 'Cert_190456-208686_8TeV_22Jan2013ReReco_Collisions12_JSON.txt'
-config.Data.publishDataName = 'Data_Run_B_v4'
+config.Data.publishDataName = 'Data_Run_B_v5'
 
 config.section_('User')
 

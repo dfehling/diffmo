@@ -3,7 +3,7 @@ config = Configuration()
 
 config.section_('General')
 config.General.transferOutputs = True
-config.General.requestName = 'Data_Run_A_v5'
+config.General.requestName = 'Data_Run_B_v1'
 
 config.section_('JobType')
 config.JobType.psetName = 'hadronic.py'
@@ -17,11 +17,11 @@ config.JobType.inputFiles = ['JEC/START53_V27_L1FastJet_AK7PFchs.txt', 'JEC/STAR
 config.JobType.pyCfgParams = ['runOnData=1', 'JES=nominal', 'JER=nominal', 'runOnCrab=1']
 
 config.section_('Data')
-config.Data.inputDataset = '/Jet/StoreResults-Run2012A_22Jan2013_TLBSM_53x_v2_0161496fccaa0bf55fbb525b618345b5-v1/USER'
-config.Data.unitsPerJob = 80
+config.Data.inputDataset = '/SingleMu/StoreResults-V2-Run2012B-22Jan2013-v1_TLBSM_53x_v3-db7dd8e58134469d4e102fe8d5e205b6/USER'
+config.Data.unitsPerJob = 150
 config.Data.splitting = 'LumiBased'
 config.Data.lumiMask = 'Cert_190456-208686_8TeV_22Jan2013ReReco_Collisions12_JSON.txt'
-config.Data.publishDataName = 'Data_Run_A_v5'
+config.Data.publishDataName = 'Data_Run_B_v1'
 
 config.section_('User')
 
