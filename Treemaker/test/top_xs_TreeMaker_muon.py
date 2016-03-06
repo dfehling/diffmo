@@ -12,8 +12,6 @@ class tree_maker:
         # load all the event info:
         # self.out_info = 0
         self.name = outputname
-        # self.seed = seed
-        # self.makeMistag = makeMistag
         self.triggerFileStr = triggerFileStr
 
         #General Quantities
