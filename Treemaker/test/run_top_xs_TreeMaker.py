@@ -11,7 +11,7 @@ from optparse import OptionParser
 parser = OptionParser()
 
 parser.add_option('-i', '--dirs', metavar='F', type='string', action='store',
-                    default='/uscms_data/d3/dfehling/NTUPLES/June/dataA/',
+                    default='/uscms_data/d3/dfehling/NTUPLES/dataA/',
                     dest='dirs',
                     help='Input Directories (glob format)')
 
@@ -49,7 +49,7 @@ parser.add_option('--config', metavar='N', type='string', action='store',
 
 if config=='':
     from top_xs_TreeMaker import *
-else if config='muon':
+else if config=='muon':
     from top_xs_TreeMaker_muon import *
 
 files = sorted(glob.glob( options.dirs + "*.root" ))
