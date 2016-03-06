@@ -42,14 +42,14 @@ parser.add_option('--triggerFile', metavar='N', type='string', action='store',
 
 parser.add_option('--config', metavar='N', type='string', action='store',
                     default='',
-                    dest='config'
+                    dest='config',
                     help='leave blank to run hadronic analyzer. Use "muon" to run over muon NTUPLES')
 
 (options, args) = parser.parse_args()
 
-if config=='':
+if options.config=='':
     from top_xs_TreeMaker import *
-else if config=='muon':
+if options.config=='muon':
     from top_xs_TreeMaker_muon import *
 
 files = sorted(glob.glob( options.dirs + "*.root" ))
