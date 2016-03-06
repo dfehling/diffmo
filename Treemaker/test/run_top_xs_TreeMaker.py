@@ -63,7 +63,7 @@ This may result in the last requested job not being filled, so we exit in that c
 numFiles = int(math.ceil( float(len(files)) / (totalSection) ) )
 limit = min((section*numFiles), len(files))
 
-if (section-1)*numFiles>len(files):
+if (section-1)*numFiles>=len(files):
     exit("Last section %i would be empty, exiting" % section)
 
 files = files[(section-1)*numFiles:limit]
