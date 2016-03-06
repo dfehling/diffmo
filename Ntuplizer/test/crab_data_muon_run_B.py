@@ -21,7 +21,7 @@ config.Data.inputDataset = '/SingleMu/StoreResults-V2-Run2012B-22Jan2013-v1_TLBS
 config.Data.unitsPerJob = 150
 config.Data.splitting = 'LumiBased'
 config.Data.lumiMask = 'Cert_190456-208686_8TeV_22Jan2013ReReco_Collisions12_JSON.txt'
-config.Data.publishDataName = 'Data_Run_B_v1'
+config.Data.outputDatasetTag = 'Data_Run_B_v1'
 
 config.section_('User')
 

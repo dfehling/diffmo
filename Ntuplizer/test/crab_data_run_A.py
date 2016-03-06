@@ -21,7 +21,7 @@ config.Data.inputDataset = '/Jet/StoreResults-Run2012A_22Jan2013_TLBSM_53x_v2_01
 config.Data.unitsPerJob = 80
 config.Data.splitting = 'LumiBased'
 config.Data.lumiMask = 'Cert_190456-208686_8TeV_22Jan2013ReReco_Collisions12_JSON.txt'
-config.Data.publishDataName = 'Data_Run_A_v5'
+config.Data.outputDatasetTag = 'Data_Run_A_v5'
 
 config.section_('User')
 
