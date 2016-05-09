@@ -20,7 +20,7 @@ config.section_('Data')
 config.Data.inputDataset = '/TT_Mtt-1000toInf_CT10_TuneZ2star_8TeV-powheg-tauola/StoreResults-Summer12_DR53X-PU_S10_START53_V7A-v1_TLBSM_53x_v3-99bd99199697666ff01397dad5652e9e/USER'
 config.Data.unitsPerJob = 5
 config.Data.splitting = 'FileBased'
-config.Data.outputDatasetTag = 'TTBar_Powheg10_v4'
+config.Data.outputDatasetTag = 'TTBar_Powheg10_v5'
 
 config.section_('User')
 

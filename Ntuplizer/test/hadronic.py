@@ -182,6 +182,10 @@ process.out = cms.OutputModule("PoolOutputModule",
 								'drop *',
 								'keep *_jhu*_*_*',
 								'keep *_*prunedGenParticles*_*_*',
+                                'keep *_*ca8GenJetsNoNu*_*_*',
+                                'keep *_*caFilteredGenJetsNoNu*_*_*',
+                                'keep *_*caPrunedGen*_*_*',
+                                'keep *_*selectedPatJetsPFlow*_*_*',
 								'keep *_TriggerResults_*_HLT',
 								'keep *_pdfWeights*_*_*'))
 process.outpath = cms.EndPath(process.out)
