@@ -17,7 +17,7 @@ config.JobType.inputFiles = ['JEC/START53_V27_L1FastJet_AK7PFchs.txt', 'JEC/STAR
 config.JobType.pyCfgParams = ['runOnData=0', 'JES=up', 'JER=nominal', 'includePDF=0', 'runOnCrab=1']
 
 config.section_('Data')
-config.Data.inputDataset = '    /TT_CT10_TuneZ2star_8TeV-powheg-tauola/StoreResults-Summer12_DR53X-PU_S10_START53_V7A-v2_TLBSM_53x_v3_bugfix_v1-99bd99199697666ff01397dad5652e9e/USER'
+config.Data.inputDataset = '/TT_CT10_TuneZ2star_8TeV-powheg-tauola/StoreResults-Summer12_DR53X-PU_S10_START53_V7A-v2_TLBSM_53x_v3_bugfix_v1-99bd99199697666ff01397dad5652e9e/USER'
 config.Data.unitsPerJob = 5
 config.Data.splitting = 'FileBased'
 config.Data.outputDatasetTag = 'TTBar_Powheg_v5_JESup'
