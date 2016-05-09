@@ -176,16 +176,16 @@ if options.includePDF:
 	process.p *= process.pdfWeights
 
 process.out = cms.OutputModule("PoolOutputModule",
-							   fileName = cms.untracked.string(options.outputFile),
-							   SelectEvents   = cms.untracked.PSet( SelectEvents = cms.vstring('p')),
-							   outputCommands = cms.untracked.vstring(
+								fileName = cms.untracked.string(options.outputFile),
+								SelectEvents   = cms.untracked.PSet( SelectEvents = cms.vstring('p')),
+								outputCommands = cms.untracked.vstring(
 								'drop *',
 								'keep *_jhu*_*_*',
 								'keep *_*prunedGenParticles*_*_*',
-                                'keep *_*ca8GenJetsNoNu*_*_*',
-                                'keep *_*caFilteredGenJetsNoNu*_*_*',
-                                'keep *_*caPrunedGen*_*_*',
-                                'keep *_*selectedPatJetsPFlow*_*_*',
+								'keep *_*ca8GenJetsNoNu*_*_*',
+								'keep *_*caFilteredGenJetsNoNu*_*_*',
+								'keep *_*caPrunedGen*_*_*',
+								'keep *_*selectedPatJetsPFlow*_*_*',
 								'keep *_TriggerResults_*_HLT',
 								'keep *_pdfWeights*_*_*'))
 process.outpath = cms.EndPath(process.out)
