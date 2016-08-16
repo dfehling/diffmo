@@ -45,6 +45,27 @@ parser.add_option('--config', metavar='N', type='string', action='store',
                     dest='config',
                     help='leave blank to run hadronic analyzer. Use "muon" to run over muon NTUPLES')
 
+parser.add_option('--isMC', metavar='N', type='int', action='store',
+                    default = 0,
+                    dest='isMC',
+                    help='are we running over MC(1) or not(0)')
+
+parser.add_option('--unfoldWeight', metavar='N', type='float', action='store',
+                    default=-1,
+                    dest='unfoldWeight',
+                    help='mc weight to be used when making the response matrix')
+
+parser.add_option('--invMassCut', metavar='N', type='int', action='store',
+                    default=-1,
+                    dest='invMassCut',
+                    help='invariant Mass cut. Really just -1 or 700 for full powheg to be able to stitch')
+
+parser.add_option('--doUnfold', metavar='N', type='int', action='store',
+                    default=0,
+                    dest='doUnfold',
+                    help='Whether or not to unfold. Needs to be off for JER/JES currently')
+
+
 (options, args) = parser.parse_args()
 
 if options.config=='':
@@ -72,7 +93,7 @@ files = files[(section-1)*numFiles:limit]
 events = Events (files)
 ntotal = events.size()
 
-analyzer = tree_maker(options.outfile, options.triggerFile)
+analyzer = tree_maker(options.outfile, options.triggerFile, options.isMC, options.unfoldWeight, options.invMassCut, options.doUnfold)
 
 count = 0
 print "Start looping"
@@ -89,3 +110,4 @@ for event in events:
         break   
 
 del analyzer
+print 'Finished   Job {0:2.0f} {1:10.0f}/{2:10.0f} : {3:5.0f} %'.format(section, count, ntotal, float(count)/float(ntotal)*100. )

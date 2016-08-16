@@ -86,7 +86,7 @@ process.jhuGen = cms.EDFilter('jhuGeneral',
 				pvSrc = cms.InputTag('goodOfflinePrimaryVertices'),
 				metSrc = cms.InputTag('patMETsPFlow'),
 				isData = runOnData)
-#Muons
+# #Muons
 process.jhuMuonPFlow = cms.EDFilter('jhuLepton',
 				lepSrc = cms.InputTag('selectedPatMuonsPFlow'),
 				lepType = cms.string('muon'),
@@ -96,16 +96,16 @@ process.jhuMuonPFlow = cms.EDFilter('jhuLepton',
 process.jhuMuonPFlowLoose = process.jhuMuonPFlow.clone(
 				lepSrc = cms.InputTag('selectedPatMuonsPFlowLoose'),
 				lepName = cms.string('muonLoose'))
-#Electrons
-process.jhuElePFlow = cms.EDFilter('jhuLepton',
-				lepSrc = cms.InputTag('selectedPatElectronsPFlow'),
-				lepType = cms.string('electron'),
-				lepName = cms.string('electron'),
-				pvSrc = cms.InputTag('goodOfflinePrimaryVertices'),
-				beamSpotSrc = cms.InputTag('offlineBeamSpot'))
-process.jhuElePFlowLoose = process.jhuElePFlow.clone(
-				lepSrc = cms.InputTag('selectedPatElectronsPFlowLoose'),
-				lepName = cms.string('electronLoose'))
+# #Electrons
+# process.jhuElePFlow = cms.EDFilter('jhuLepton',
+# 				lepSrc = cms.InputTag('selectedPatElectronsPFlow'),
+# 				lepType = cms.string('electron'),
+# 				lepName = cms.string('electron'),
+# 				pvSrc = cms.InputTag('goodOfflinePrimaryVertices'),
+# 				beamSpotSrc = cms.InputTag('offlineBeamSpot'))
+# process.jhuElePFlowLoose = process.jhuElePFlow.clone(
+# 				lepSrc = cms.InputTag('selectedPatElectronsPFlowLoose'),
+# 				lepName = cms.string('electronLoose'))
 #CA8 Jets
 process.jhuCa8 = cms.EDFilter("jhuHadronic",
 				jetSrc = cms.InputTag('goodPatJetsCA8PF'),
@@ -131,23 +131,23 @@ process.jhuCa8pp = process.jhuCa8.clone(
 				subcorr = cms.string('yes'),
 				btagType = cms.string('combinedSecondaryVertexBJetTags'),
 				jetName = cms.string('PrunedCA8'))
-#TopTagged CA8 Jets
-process.jhuCa8tt = process.jhuCa8pp.clone(
-				jetSrc = cms.InputTag('goodPatJetsCATopTagPFPacked'),
-				addTopTagInfo = cms.bool(True),
-				jetName = cms.string('TopTaggedCA8'))
-#HEP Top Tagged Jets
-process.jhuHep = process.jhuCa8pp.clone(
-				jetSrc = cms.InputTag('goodPatJetsCAHEPTopTagPFPacked'),
-				jetName = cms.string('HEPTopTagged'))
-#AK5 Jets
-process.jhuAk5 = process.jhuCa8.clone(
-				jetSrc = cms.InputTag('goodPatJetsPFlow'),
-				genSrc = cms.InputTag('ak5GenJetsNoNu'),
-				# rhoSrc = cms.InputTag('ak5GenJetsNoNu', 'rho'), #kt6 is the only one filled in our pat-tuples
-				useNsub = cms.string('no'),
-				jecPayloads = theJecPayloads_AK5,
-				jetName = cms.string('AK5'))
+# #TopTagged CA8 Jets
+# process.jhuCa8tt = process.jhuCa8pp.clone(
+# 				jetSrc = cms.InputTag('goodPatJetsCATopTagPFPacked'),
+# 				addTopTagInfo = cms.bool(True),
+# 				jetName = cms.string('TopTaggedCA8'))
+# #HEP Top Tagged Jets
+# process.jhuHep = process.jhuCa8pp.clone(
+# 				jetSrc = cms.InputTag('goodPatJetsCAHEPTopTagPFPacked'),
+# 				jetName = cms.string('HEPTopTagged'))
+# #AK5 Jets
+# process.jhuAk5 = process.jhuCa8.clone(
+# 				jetSrc = cms.InputTag('goodPatJetsPFlow'),
+# 				genSrc = cms.InputTag('ak5GenJetsNoNu'),
+# 				# rhoSrc = cms.InputTag('ak5GenJetsNoNu', 'rho'), #kt6 is the only one filled in our pat-tuples
+# 				useNsub = cms.string('no'),
+# 				jecPayloads = theJecPayloads_AK5,
+# 				jetName = cms.string('AK5'))
 #PDF Weights
 process.pdfWeights = cms.EDProducer("PdfWeightProducer",
 	# Fix POWHEG if buggy (this PDF set will also appear on output, 
@@ -164,30 +164,48 @@ process.p = cms.Path(
 			process.jhuGen*
 			process.jhuMuonPFlow*
 			process.jhuMuonPFlowLoose*
-			process.jhuElePFlow*
-			process.jhuElePFlowLoose*
+			# process.jhuElePFlow*
+			# process.jhuElePFlowLoose*
 			process.jhuCa8*
-			process.jhuCa8pp*
-			process.jhuCa8tt*
-			process.jhuHep*
-			process.jhuAk5)
+			process.jhuCa8pp)
+			# process.jhuCa8tt*
+			# process.jhuHep*
+			# process.jhuAk5)
 
 if options.includePDF:
 	process.p *= process.pdfWeights
 
+#Worried about space, so only keep generator info and trigger info if the nominal sample, not for JES/JER
+toKeep = cms.untracked.vstring(
+    'drop *',
+    'keep *_jhu*_*_*')
+if options.JES == "nominal" and options.JER == "nominal":
+    toKeep = cms.untracked.vstring(
+        'drop *',
+        'keep *_jhu*_*_*',
+        'keep *_*prunedGenParticles*_*_*',
+        'keep *_*ca8GenJetsNoNu*_*_*',
+        # 'keep *_*caFilteredGenJetsNoNu*_*_*',
+        # 'keep *_*caPrunedGen*_*_*',
+        # 'keep *_*selectedPatJetsPFlow*_*_*',
+        'keep *_TriggerResults_*_HLT',
+        'keep *_pdfWeights*_*_*')
+
+
 process.out = cms.OutputModule("PoolOutputModule",
 								fileName = cms.untracked.string(options.outputFile),
 								SelectEvents   = cms.untracked.PSet( SelectEvents = cms.vstring('p')),
-								outputCommands = cms.untracked.vstring(
-								'drop *',
-								'keep *_jhu*_*_*',
-								'keep *_*prunedGenParticles*_*_*',
-								'keep *_*ca8GenJetsNoNu*_*_*',
-								'keep *_*caFilteredGenJetsNoNu*_*_*',
-								'keep *_*caPrunedGen*_*_*',
-								'keep *_*selectedPatJetsPFlow*_*_*',
-								'keep *_TriggerResults_*_HLT',
-								'keep *_pdfWeights*_*_*'))
+                                outputCommands = toKeep)
+								# outputCommands = cms.untracked.vstring(
+								# 'drop *',
+								# 'keep *_jhu*_*_*',
+								# 'keep *_*prunedGenParticles*_*_*',
+								# 'keep *_*ca8GenJetsNoNu*_*_*',
+								# 'keep *_*caFilteredGenJetsNoNu*_*_*',
+								# 'keep *_*caPrunedGen*_*_*',
+								# 'keep *_*selectedPatJetsPFlow*_*_*',
+								# 'keep *_TriggerResults_*_HLT',
+								# 'keep *_pdfWeights*_*_*'))
 process.outpath = cms.EndPath(process.out)
 process.options   = cms.untracked.PSet( wantSummary = cms.untracked.bool(True) )
 process.out.dropMetaData = cms.untracked.string("DROPPED")
