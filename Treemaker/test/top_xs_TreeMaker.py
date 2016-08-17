@@ -154,9 +154,9 @@ class tree_maker:
         self.triggerEff = array('f', [1.0])
 
         self.pass400pt = array('f', [-1.0])
-        self.pass450pt = array('f', [-1.0])
+        self.pass750pt = array('f', [-1.0])
         self.fail400pt = array('f', [-1.0])
-        self.fail450pt = array('f', [-1.0])
+        self.fail750pt = array('f', [-1.0])
 
         self.treeVars.Branch('run', self.run, 'run/I')
         self.treeVars.Branch('event', self.event, 'event/L')
@@ -272,9 +272,9 @@ class tree_maker:
         self.treeVars.Branch('ucJet2mass', self.ucJet2mass, 'ucJet2mass/F')
 
         self.treeVars.Branch('pass400pt', self.pass400pt, 'pass400pt/F')
-        self.treeVars.Branch('pass450pt', self.pass450pt, 'pass450pt/F')
+        self.treeVars.Branch('pass750pt', self.pass750pt, 'pass750pt/F')
         self.treeVars.Branch('fail400pt', self.fail400pt, 'fail400pt/F')
-        self.treeVars.Branch('fail450pt', self.fail450pt, 'fail450pt/F')
+        self.treeVars.Branch('fail750pt', self.fail750pt, 'fail750pt/F')
 
 
         if self.isMC == True and self.doUnfold == True and self.unfoldWeight != 1.0:
@@ -321,10 +321,10 @@ class tree_maker:
             trigNames = event.object().triggerNames(self.triggerHandle.product())
 
             path400 = "HLT_HT400"
-            path450 = "HLT_HT450"
+            path750 = "HLT_HT750"
 
             index400 = trigNames.triggerIndex(path400)
-            index450 = trigNames.triggerIndex(path450)
+            index750 = trigNames.triggerIndex(path750)
 
             for version in ["_v1","_v2","_v3","_v4","_v5","_v6","_v7"]:
                 newpath400 = path400+version
@@ -332,17 +332,17 @@ class tree_maker:
                 if newindex400==trigNames.size():
                     continue
                 else:
-                    newpath450 = path450+version
+                    newpath750 = path750+version
                     break
 
             index400 = trigNames.triggerIndex(newpath400)
-            index450 = trigNames.triggerIndex(newpath450)
+            index750 = trigNames.triggerIndex(newpath750)
 
-            # print index400,index450
-            # print trigNames.triggerName(index400), trigNames.triggerName(index450)
+            # print index400,index750
+            # print trigNames.triggerName(index400), trigNames.triggerName(index750)
 
             pass400 = self.triggerHandle.product().accept(index400)
-            pass450 = self.triggerHandle.product().accept(index450)
+            pass750 = self.triggerHandle.product().accept(index750)
 
         self.run[0] = event.object().id().run()
         self.event[0] = event.object().id().event()
@@ -589,10 +589,10 @@ class tree_maker:
                 self.pass400pt[0] = ca1.Pt()
             else:
                 self.fail400pt[0] = ca1.Pt()
-            if pass450:
-                self.pass450pt[0] = ca1.Pt()
+            if pass750:
+                self.pass750pt[0] = ca1.Pt()
             else:
-                self.fail450pt[0] = ca1.Pt()
+                self.fail750pt[0] = ca1.Pt()
 
         #Match unpruned jets with pruned - so we have both subjet btagging and nsubjettiness
         #This returns the index of the jet in the first collection that matches within dr = 0.4 to the jet of the second argument
@@ -848,9 +848,9 @@ class tree_maker:
         self.passFullSel[0] = -1
 
         self.pass400pt[0] = -1
-        self.pass450pt[0] = -1
+        self.pass750pt[0] = -1
         self.fail400pt[0] = -1
-        self.fail450pt[0] = -1
+        self.fail750pt[0] = -1
 
         # self.allJet1pt[0] = -1.0
 
