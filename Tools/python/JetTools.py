@@ -6,10 +6,12 @@ def ClosestJet(jets, fourvec): #returns the index of the jet (from a collection 
 	DR = 9999.
 	index = -1
 	for j in range(0,len(jets)):
-	    if jets[j].Pt() > 0 :
-		dR = fourvec.DeltaR(jets[j])
+	    C = ROOT.TLorentzVector()
+        C.SetPtEtaPhiM( jets[j].Pt(), jets[j].eta(), jets[j].phi(), jets[j].mass() )
+        if C.Pt() > 0 :
+		dR = fourvec.DeltaR(C)
 		if dR < DR :
-			DR = fourvec.DeltaR(jets[j])
+			DR = fourvec.DeltaR(C)
 			index = j
 	return index
 

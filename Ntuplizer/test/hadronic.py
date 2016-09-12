@@ -3,9 +3,9 @@ import FWCore.ParameterSet.Config as cms
 from FWCore.ParameterSet.VarParsing import VarParsing
 options = VarParsing('analysis')
 options.register('runOnData', 0, VarParsing.multiplicity.singleton, VarParsing.varType.bool, "Flag for data (True) or MC (False), used to decide whether to apply b-tagging SF")
-options.register('JES', 'nominal', VarParsing.multiplicity.singleton, VarParsing.varType.string, "Flag for Jet Energy Scale. Options are nominal (off), up, and down - forced to nominal for data")
-options.register('JER', 'nominal', VarParsing.multiplicity.singleton, VarParsing.varType.string, "Flag for Jet Energy Resolution Smearing. Options are nominal, up, and down - forced to nominal for data")
-options.register('includePDF', 0, VarParsing.multiplicity.singleton, VarParsing.varType.bool, "Flag for if to include PDF Weights. If you include make sure you have done scram setup lhapdffull first")
+# options.register('JES', 'nominal', VarParsing.multiplicity.singleton, VarParsing.varType.string, "Flag for Jet Energy Scale. Options are nominal (off), up, and down - forced to nominal for data")
+# options.register('JER', 'nominal', VarParsing.multiplicity.singleton, VarParsing.varType.string, "Flag for Jet Energy Resolution Smearing. Options are nominal, up, and down - forced to nominal for data")
+# options.register('includePDF', 0, VarParsing.multiplicity.singleton, VarParsing.varType.bool, "Flag for if to include PDF Weights. If you include make sure you have done scram setup lhapdffull first")
 #For pdf, see https://twiki.cern.ch/twiki/bin/view/CMSPublic/SWGuideEWKUtilities#Summary
 options.register('runOnCrab', 0, VarParsing.multiplicity.singleton, VarParsing.varType.bool, "Flag to process JEC files properly on the grid")
 options.setDefault('maxEvents', 1000)
@@ -23,23 +23,23 @@ print options
 
 if options.runOnData:
 	runOnData = cms.bool(True)
-	jesFactor = cms.double(0.00)
-	jerFactor = cms.double(0.10)
+	# jesFactor = cms.double(0.00)
+	# jerFactor = cms.double(0.10)
 	filenames = cms.untracked.vstring("file:root://xrootd.unl.edu//store/results/b2g/StoreResults/JetHT/USER/Run2012B_22Jan2013_TLBSM_53x_0161496fccaa0bf55fbb525b618345b5-v1/00000/00F149B6-E46B-E411-841F-0025905A610C.root")
 else:
 	runOnData = cms.bool(False)
-	if options.JES == 'nominal':
-		jesFactor = cms.double(0.00)
-	if options.JES == 'up':
-		jesFactor = cms.double(0.03)
-	if options.JES == 'down':
-		jesFactor = cms.double(-0.03)
-	if options.JER == 'nominal':
-		jerFactor = cms.double(0.10)
-	if options.JER == 'up':
-		jerFactor = cms.double(0.20)
-	if options.JER == 'down':
-		jerFactor = cms.double(0.00)
+	# if options.JES == 'nominal':
+	# 	jesFactor = cms.double(0.00)
+	# if options.JES == 'up':
+	# 	jesFactor = cms.double(0.03)
+	# if options.JES == 'down':
+	# 	jesFactor = cms.double(-0.03)
+	# if options.JER == 'nominal':
+	# 	jerFactor = cms.double(0.10)
+	# if options.JER == 'up':
+	# 	jerFactor = cms.double(0.20)
+	# if options.JER == 'down':
+	# 	jerFactor = cms.double(0.00)
 	filenames = cms.untracked.vstring("file:root://xrootd.unl.edu//store/results/B2G/TT_Mtt-700to1000_CT10_TuneZ2star_8TeV-powheg-tauola/StoreResults-Summer12_DR53X-PU_S10_START53_V7A-v1_TLBSM_53x_v3-99bd99199697666ff01397dad5652e9e/TT_Mtt-700to1000_CT10_TuneZ2star_8TeV-powheg-tauola/USER/StoreResults-Summer12_DR53X-PU_S10_START53_V7A-v1_TLBSM_53x_v3-99bd99199697666ff01397dad5652e9e/0000/02621A0E-40C2-E211-9F42-002590593902.root")
 
 if options.runOnCrab:
@@ -81,6 +81,7 @@ process = cms.Process("jhu")
 process.load("FWCore.MessageService.MessageLogger_cfi")
 process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(options.maxEvents))
 process.source = cms.Source("PoolSource", fileNames = filenames)
+
 #General
 process.jhuGen = cms.EDFilter('jhuGeneral',
 				pvSrc = cms.InputTag('goodOfflinePrimaryVertices'),
@@ -96,16 +97,7 @@ process.jhuMuonPFlow = cms.EDFilter('jhuLepton',
 process.jhuMuonPFlowLoose = process.jhuMuonPFlow.clone(
 				lepSrc = cms.InputTag('selectedPatMuonsPFlowLoose'),
 				lepName = cms.string('muonLoose'))
-# #Electrons
-# process.jhuElePFlow = cms.EDFilter('jhuLepton',
-# 				lepSrc = cms.InputTag('selectedPatElectronsPFlow'),
-# 				lepType = cms.string('electron'),
-# 				lepName = cms.string('electron'),
-# 				pvSrc = cms.InputTag('goodOfflinePrimaryVertices'),
-# 				beamSpotSrc = cms.InputTag('offlineBeamSpot'))
-# process.jhuElePFlowLoose = process.jhuElePFlow.clone(
-# 				lepSrc = cms.InputTag('selectedPatElectronsPFlowLoose'),
-# 				lepName = cms.string('electronLoose'))
+
 #CA8 Jets
 process.jhuCa8 = cms.EDFilter("jhuHadronic",
 				jetSrc = cms.InputTag('goodPatJetsCA8PF'),
@@ -113,24 +105,43 @@ process.jhuCa8 = cms.EDFilter("jhuHadronic",
 				npvSrc = cms.InputTag("jhuGen", "npv"),
 				rhoSrc = cms.InputTag('kt6PFJets', 'rho'),
 				useNsub = cms.string('yes'),
-				subcorr = cms.string('no'),
+				# subcorr = cms.string('no'),
 				btagType = cms.string(''),
 				basecorr = cms.int32(1),
 				isData = runOnData,
-				jetScale = jesFactor,
-				jetPtSmear = jerFactor,
-				jetAngularSmear = jerFactor,
+				jetScale = cms.double(0.00),
+				jetPtSmear = cms.double(0.10),
+				jetAngularSmear = cms.double(0.10),
 				jecPayloads = theJecPayloads_AK7,
-				mkSubSize = cms.double(1.0),
-				addTopTagInfo = cms.bool(False),
+				# mkSubSize = cms.double(0.0),
+				# addTopTagInfo = cms.bool(False),
 				jetName = cms.string('UnprunedCA8'))
 #Pruned CA8 Jets
 process.jhuCa8pp = process.jhuCa8.clone(
 				jetSrc = cms.InputTag('goodPatJetsCA8PrunedPFPacked'),
 				useNsub = cms.string('no'),
-				subcorr = cms.string('yes'),
+				# subcorr = cms.string('no'),
 				btagType = cms.string('combinedSecondaryVertexBJetTags'),
 				jetName = cms.string('PrunedCA8'))
+
+process.jhuCa8JERup = process.jhuCa8.clone(
+				jetPtSmear = cms.double(0.20),
+				jetAngularSmear = cms.double(0.20))
+process.jhuCa8ppJERup = process.jhuCa8pp.clone(
+				jetPtSmear = cms.double(0.20),
+				jetAngularSmear = cms.double(0.20))
+process.jhuCa8JERdn = process.jhuCa8.clone(
+				jetPtSmear = cms.double(0.00),
+				jetAngularSmear = cms.double(0.00))
+process.jhuCa8ppJERdn = process.jhuCa8pp.clone(
+				jetPtSmear = cms.double(0.00),
+				jetAngularSmear = cms.double(0.00))
+process.jhuCa8JESup = process.jhuCa8.clone(jetScale = cms.double(0.03))
+process.jhuCa8ppJESup = process.jhuCa8pp.clone(jetScale = cms.double(0.03))
+process.jhuCa8JESdn = process.jhuCa8.clone(jetScale = cms.double(-0.03))
+process.jhuCa8ppJESdn = process.jhuCa8pp.clone(jetScale = cms.double(-0.03))
+
+
 # #TopTagged CA8 Jets
 # process.jhuCa8tt = process.jhuCa8pp.clone(
 # 				jetSrc = cms.InputTag('goodPatJetsCATopTagPFPacked'),
@@ -152,11 +163,10 @@ process.jhuCa8pp = process.jhuCa8.clone(
 process.pdfWeights = cms.EDProducer("PdfWeightProducer",
 	# Fix POWHEG if buggy (this PDF set will also appear on output, 
 	# so only two more PDF sets can be added in PdfSetNames if not "")
-	FixPOWHEG = cms.untracked.string(""),
+	FixPOWHEG = cms.untracked.string("CT10.LHgrid"),
 	GenTag = cms.untracked.InputTag("prunedGenParticles"),
 	PdfInfoTag = cms.untracked.InputTag("generator"),
-	PdfSetNames = cms.untracked.vstring("CT10.LHgrid",
-										"MSTW2008nnlo68cl.LHgrid",
+	PdfSetNames = cms.untracked.vstring("MSTW2008nnlo68cl.LHgrid",
 										"NNPDF23_nnlo_as_0118.LHgrid"))
 
 process.MessageLogger.cerr.FwkReport.reportEvery = 100
@@ -166,30 +176,38 @@ process.p = cms.Path(
 			process.jhuMuonPFlowLoose*
 			# process.jhuElePFlow*
 			# process.jhuElePFlowLoose*
+			process.pdfWeights*
 			process.jhuCa8*
 			process.jhuCa8pp)
 			# process.jhuCa8tt*
 			# process.jhuHep*
 			# process.jhuAk5)
 
-if options.includePDF:
-	process.p *= process.pdfWeights
+if not options.runOnData:
+	process.p *= process.jhuCa8JERup*
+				 process.jhuCa8ppJERup*
+				 process.jhuCa8JERdn*
+				 process.jhuCa8ppJERdn*
+				 process.jhuCa8JESup*
+				 process.jhuCa8ppJESup*
+				 process.jhuCa8JESdn*
+				 process.jhuCa8ppJESdn
 
 #Worried about space, so only keep generator info and trigger info if the nominal sample, not for JES/JER
+# toKeep = cms.untracked.vstring(
+#     'drop *',
+#     'keep *_jhu*_*_*')
+# if options.JES == "nominal" and options.JER == "nominal":
 toKeep = cms.untracked.vstring(
     'drop *',
-    'keep *_jhu*_*_*')
-if options.JES == "nominal" and options.JER == "nominal":
-    toKeep = cms.untracked.vstring(
-        'drop *',
-        'keep *_jhu*_*_*',
-        'keep *_*prunedGenParticles*_*_*',
-        'keep *_*ca8GenJetsNoNu*_*_*',
-        # 'keep *_*caFilteredGenJetsNoNu*_*_*',
-        # 'keep *_*caPrunedGen*_*_*',
-        # 'keep *_*selectedPatJetsPFlow*_*_*',
-        'keep *_TriggerResults_*_HLT',
-        'keep *_pdfWeights*_*_*')
+    'keep *_jhu*_*_*',
+    'keep *_*prunedGenParticles*_*_*',
+    'keep *_*ca8GenJetsNoNu*_*_*',
+    # 'keep *_*caFilteredGenJetsNoNu*_*_*',
+    # 'keep *_*caPrunedGen*_*_*',
+    # 'keep *_*selectedPatJetsPFlow*_*_*',
+    'keep *_TriggerResults_*_HLT',
+    'keep *_pdfWeights*_*_*')
 
 
 process.out = cms.OutputModule("PoolOutputModule",

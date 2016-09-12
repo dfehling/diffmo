@@ -305,7 +305,8 @@ namespace HADDF
 		}
 	}
 
-	void  ApplyJec(std::vector<pat::Jet>::const_iterator jet, boost::shared_ptr<FactorizedJetCorrector> jec, boost::shared_ptr<JetCorrectionUncertainty> jecUnc, bool isData, edm::Handle<std::vector<reco::GenJet> > genJ, std::auto_ptr<p4_vector> &jetC, std::auto_ptr<p4_vector> &sub0C, std::auto_ptr<p4_vector> &sub1C, std::auto_ptr<p4_vector> &sub2C, std::auto_ptr<p4_vector> &sub3C, unsigned int nsub, unsigned int npv, double rhoVal, double scale, double smear, double angularSmear, bool dosub, double &JEC)
+	// void  ApplyJec(std::vector<pat::Jet>::const_iterator jet, boost::shared_ptr<FactorizedJetCorrector> jec, boost::shared_ptr<JetCorrectionUncertainty> jecUnc, bool isData, edm::Handle<std::vector<reco::GenJet> > genJ, std::auto_ptr<p4_vector> &jetC, std::auto_ptr<p4_vector> &sub0C, std::auto_ptr<p4_vector> &sub1C, std::auto_ptr<p4_vector> &sub2C, std::auto_ptr<p4_vector> &sub3C, unsigned int nsub, unsigned int npv, double rhoVal, double scale, double smear, double angularSmear, bool dosub, double &JEC)
+    void  ApplyJec(std::vector<pat::Jet>::const_iterator jet, boost::shared_ptr<FactorizedJetCorrector> jec, boost::shared_ptr<JetCorrectionUncertainty> jecUnc, bool isData, edm::Handle<std::vector<reco::GenJet> > genJ, std::auto_ptr<p4_vector> &jetC, unsigned int npv, double rhoVal, double scale, double smear, double angularSmear)
 	{
 		reco::Candidate::LorentzVector uncorrJet = jet->correctedP4(0);
 		jec->setJetEta( uncorrJet.eta() );
@@ -313,7 +314,7 @@ namespace HADDF
 		jec->setJetE  ( uncorrJet.energy() );
 		jec->setJetA  ( jet->jetArea() );
 		jec->setRho   ( rhoVal );
-		jec->setNPV   ( npv );
+		jec->setNPV   ( npv ); // NPV or NPVtrue?
 		double corr = jec->getCorrection();
 		reco::GenJet theMatchingGenJet;
 
@@ -380,83 +381,83 @@ namespace HADDF
 		corrJet.SetPhi( corrJet.phi() * phiScale );
 	
 		jetC->push_back( corrJet );
-		JEC = corr * ptSmear;
-		if (dosub)
-		{
-			int startnull = 0;
-			if (nsub > 0)
-			{
-				startnull++;
-				const pat::Jet* d0_b = dynamic_cast<const pat::Jet*>(jet->daughter(0));
-				reco::Candidate::LorentzVector d0_m = d0_b->correctedP4(0);
-				reco::Candidate::PolarLorentzVector d0 (d0_m.pt(), d0_m.eta(), d0_m.phi(), d0_m.mass());
-				d0 *=  (corr * ptSmear);
-				d0.SetEta( d0.eta() * etaScale );
-				d0.SetPhi( d0.phi() * phiScale );
-				sub0C->push_back(d0);		
-			}
-			if (nsub > 1) 
-			{
-				startnull++;
-				const pat::Jet* d1_b = dynamic_cast<const pat::Jet*>(jet->daughter(1));
-				reco::Candidate::LorentzVector d1_m = d1_b->correctedP4(0);
-				reco::Candidate::PolarLorentzVector d1 (d1_m.pt(), d1_m.eta(), d1_m.phi(), d1_m.mass());
-				d1 *=  (corr * ptSmear);
-				d1.SetEta( d1.eta() * etaScale );
-				d1.SetPhi( d1.phi() * phiScale );
-				sub1C->push_back(d1)	;	
-			}
-			if (nsub > 2) 
-			{
-				startnull++;
-				const pat::Jet* d2_b = dynamic_cast<const pat::Jet*>(jet->daughter(2));
-				reco::Candidate::LorentzVector d2_m = d2_b->correctedP4(0);
-				reco::Candidate::PolarLorentzVector d2 (d2_m.pt(), d2_m.eta(), d2_m.phi(), d2_m.mass());
-				d2 *=  (corr * ptSmear);
-				d2.SetEta( d2.eta() * etaScale );
-				d2.SetPhi( d2.phi() * phiScale );
-				sub2C->push_back(d2);		
-			}
-			if (nsub > 3) 
-			{
-				startnull++;
-				const pat::Jet* d3_b = dynamic_cast<const pat::Jet*>(jet->daughter(3));
-				reco::Candidate::LorentzVector d3_m = d3_b->correctedP4(0);
-				reco::Candidate::PolarLorentzVector d3 (d3_m.pt(), d3_m.eta(), d3_m.phi(), d3_m.mass());
-				d3 *=  (corr * ptSmear);
-				d3.SetEta( d3.eta() * etaScale );
-				d3.SetPhi( d3.phi() * phiScale );
-				sub3C->push_back(d3)	;	
-			}
-			if (startnull == 0)
-			{
-				sub0C->push_back(blank);
-				sub1C->push_back(blank);	
-				sub2C->push_back(blank);	
-				sub3C->push_back(blank);
-			}
-			if (startnull == 1)
-			{
-				sub1C->push_back(blank);	
-				sub2C->push_back(blank);	
-				sub3C->push_back(blank);
-			}
-			if (startnull == 2)
-			{
-				sub2C->push_back(blank);	
-				sub3C->push_back(blank);
-			}
-			if (startnull == 3)
-			{	
-				sub3C->push_back(blank);
-			}
-		}
+		// JEC = corr * ptSmear;
+		// if (dosub)
+		// {
+		// 	int startnull = 0;
+		// 	if (nsub > 0)
+		// 	{
+		// 		startnull++;
+		// 		const pat::Jet* d0_b = dynamic_cast<const pat::Jet*>(jet->daughter(0));
+		// 		reco::Candidate::LorentzVector d0_m = d0_b->correctedP4(0);
+		// 		reco::Candidate::PolarLorentzVector d0 (d0_m.pt(), d0_m.eta(), d0_m.phi(), d0_m.mass());
+		// 		d0 *=  (corr * ptSmear);
+		// 		d0.SetEta( d0.eta() * etaScale );
+		// 		d0.SetPhi( d0.phi() * phiScale );
+		// 		sub0C->push_back(d0);		
+		// 	}
+		// 	if (nsub > 1) 
+		// 	{
+		// 		startnull++;
+		// 		const pat::Jet* d1_b = dynamic_cast<const pat::Jet*>(jet->daughter(1));
+		// 		reco::Candidate::LorentzVector d1_m = d1_b->correctedP4(0);
+		// 		reco::Candidate::PolarLorentzVector d1 (d1_m.pt(), d1_m.eta(), d1_m.phi(), d1_m.mass());
+		// 		d1 *=  (corr * ptSmear);
+		// 		d1.SetEta( d1.eta() * etaScale );
+		// 		d1.SetPhi( d1.phi() * phiScale );
+		// 		sub1C->push_back(d1)	;	
+		// 	}
+		// 	if (nsub > 2) 
+		// 	{
+		// 		startnull++;
+		// 		const pat::Jet* d2_b = dynamic_cast<const pat::Jet*>(jet->daughter(2));
+		// 		reco::Candidate::LorentzVector d2_m = d2_b->correctedP4(0);
+		// 		reco::Candidate::PolarLorentzVector d2 (d2_m.pt(), d2_m.eta(), d2_m.phi(), d2_m.mass());
+		// 		d2 *=  (corr * ptSmear);
+		// 		d2.SetEta( d2.eta() * etaScale );
+		// 		d2.SetPhi( d2.phi() * phiScale );
+		// 		sub2C->push_back(d2);		
+		// 	}
+		// 	if (nsub > 3) 
+		// 	{
+		// 		startnull++;
+		// 		const pat::Jet* d3_b = dynamic_cast<const pat::Jet*>(jet->daughter(3));
+		// 		reco::Candidate::LorentzVector d3_m = d3_b->correctedP4(0);
+		// 		reco::Candidate::PolarLorentzVector d3 (d3_m.pt(), d3_m.eta(), d3_m.phi(), d3_m.mass());
+		// 		d3 *=  (corr * ptSmear);
+		// 		d3.SetEta( d3.eta() * etaScale );
+		// 		d3.SetPhi( d3.phi() * phiScale );
+		// 		sub3C->push_back(d3)	;	
+		// 	}
+		// 	if (startnull == 0)
+		// 	{
+		// 		sub0C->push_back(blank);
+		// 		sub1C->push_back(blank);	
+		// 		sub2C->push_back(blank);	
+		// 		sub3C->push_back(blank);
+		// 	}
+		// 	if (startnull == 1)
+		// 	{
+		// 		sub1C->push_back(blank);	
+		// 		sub2C->push_back(blank);	
+		// 		sub3C->push_back(blank);
+		// 	}
+		// 	if (startnull == 2)
+		// 	{
+		// 		sub2C->push_back(blank);	
+		// 		sub3C->push_back(blank);
+		// 	}
+		// 	if (startnull == 3)
+		// 	{	
+		// 		sub3C->push_back(blank);
+		// 	}
+		// }
 	}
 	
-	void AddTopTagInfo(std::vector<pat::Jet>::const_iterator jet, std::auto_ptr<std::vector<double> > &topTagMinMass, std::auto_ptr<std::vector<double> > &topTagTopMass, double JEC)
-	{
-		const reco::CATopJetTagInfo * catopTag = dynamic_cast<reco::CATopJetTagInfo const *>(jet->tagInfo("CATop"));
-		topTagMinMass->push_back( catopTag->properties().minMass * (JEC) );
-		topTagTopMass->push_back( catopTag->properties().topMass * (JEC) );
-	}
+	// void AddTopTagInfo(std::vector<pat::Jet>::const_iterator jet, std::auto_ptr<std::vector<double> > &topTagMinMass, std::auto_ptr<std::vector<double> > &topTagTopMass, double JEC)
+	// {
+	// 	const reco::CATopJetTagInfo * catopTag = dynamic_cast<reco::CATopJetTagInfo const *>(jet->tagInfo("CATop"));
+	// 	topTagMinMass->push_back( catopTag->properties().minMass * (JEC) );
+	// 	topTagTopMass->push_back( catopTag->properties().topMass * (JEC) );
+	// }
 }
