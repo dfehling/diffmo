@@ -184,14 +184,14 @@ process.p = cms.Path(
 			# process.jhuAk5)
 
 if not options.runOnData:
-	process.p *= process.jhuCa8JERup*
-				 process.jhuCa8ppJERup*
-				 process.jhuCa8JERdn*
-				 process.jhuCa8ppJERdn*
-				 process.jhuCa8JESup*
-				 process.jhuCa8ppJESup*
-				 process.jhuCa8JESdn*
-				 process.jhuCa8ppJESdn
+	process.p *= process.jhuCa8JERup
+	process.p *= process.jhuCa8ppJERup
+	process.p *= process.jhuCa8JERdn
+	process.p *= process.jhuCa8ppJERdn
+	process.p *= process.jhuCa8JESup
+	process.p *= process.jhuCa8ppJESup
+	process.p *= process.jhuCa8JESdn
+	process.p *= process.jhuCa8ppJESdn
 
 #Worried about space, so only keep generator info and trigger info if the nominal sample, not for JES/JER
 # toKeep = cms.untracked.vstring(
