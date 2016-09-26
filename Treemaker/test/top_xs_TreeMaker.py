@@ -9,15 +9,27 @@ import sys
 from Analysis.Tools.JetTools import *
 
 class tree_maker:
-    def __init__(self, outputname, triggerFileStr, isMC, unfoldWeight, invMassCut, doUnfold):
+    def __init__(self, outputname, triggerFileStr, useTrigger, pileupFileStr, usePileup, usePDF, isMC, unfoldWeight, invMassCut, doUnfold):
         # load all the event info:
         # self.out_info = 0
         self.name = outputname
         self.triggerFileStr = triggerFileStr
+        self.useTrigger = useTrigger
+        self.pileupFileStr = pileupFileStr
+        self.usePileup = usePileup
+        self.usePDF = usePDF
         self.isMC = isMC
         self.unfoldWeight = unfoldWeight
         self.invMassCut = invMassCut
         self.doUnfold = doUnfold
+
+        self.btagSF = 1.08513350715
+        self.nsubSF = 0.814651566377
+
+        if not self.isMC:
+            self.useTrigger = False
+            self.usePileup = False
+            self.usePDF = False
 
         #General Quantities
         #N Primary Vertices
@@ -81,25 +93,36 @@ class tree_maker:
         self.genParticlesHandle = Handle( "vector<reco::GenParticle>" )
         self.genParticlesLabel = ( "prunedGenParticles" )
 
+        #PDF
+        self.pdfWeightHandle = Handle( "std::vector<double>" )
+        self.pdfWeightLabel = ( "pdfWeights", "CT10" )
+
         self.__book__()
 
     def __book__(self):
     
-        # if (self.triggerFileStr == ''):
-        #     self.doTrigger = False
-        # else:
-        #     self.triggerFile = ROOT.TFile(self.triggerFileStr + ".root")
-        #     self.triggerFile.cd()
-        #     self.trigger = self.triggerFile.Get("TRIGGER_EFF").Clone()
-        #     self.trigger.SetName('trigger')
-        #     ROOT.SetOwnership( self.trigger, False )
-        #     self.doTrigger = True
+        if self.isMC:
+            if (self.triggerFileStr != ''):
+                self.triggerFile = ROOT.TFile(self.triggerFileStr + ".root")
+                self.triggerFile.cd()
+                self.trigger = self.triggerFile.Get("trigger").Clone()
+                self.trigger.SetName('trigger')
+                ROOT.SetOwnership( self.trigger, False )
+                self.useTrigger = True
+                
+            if (self.pileupFileStr != ''):
+                self.pileupFile = ROOT.TFile(self.pileupFileStr + ".root")
+                self.pileupFile.cd()
+                self.pileup = self.pileupFile.Get("pileup").Clone()
+                self.pileup.SetName('pileup')
+                ROOT.SetOwnership( self.pileup, False )
+                self.usePileup = True
 
         print "Booking Histograms and Trees..."
         self.f = ROOT.TFile( self.name + ".root", "recreate" )
         self.f.cd()
         self.treeVars = ROOT.TTree('treeVars', 'treeVars')
-        if self.isMC:
+        if self.isMC and self.doUnfold:
             self.treeVars.SetWeight(self.unfoldWeight)
 
         self.run = array('i', [-1])
@@ -107,7 +130,6 @@ class tree_maker:
         self.lumi = array('i', [-1])
         
         self.index = array('i', [-1])
-        self.trigWt = array('f', [-1.0])
 
         self.npv = array('i', [-1])
         self.MET = array('f', [-1.0])
@@ -140,18 +162,21 @@ class tree_maker:
         self.jet2tau31 = array('f', [-1.0])
         self.jet1tau21 = array('f', [-1.0])
         self.jet2tau21 = array('f', [-1.0])
-        self.jet1nSubj = array('i', [-1])
-        self.jet2nSubj = array('i', [-1])
-        self.jet1minMass = array('f', [-1.0])
-        self.jet2minMass = array('f', [-1.0])
-
+        self.nJets = array('i',[-1])
+                
         self.jet1topTagged = array('i', [-1])
         self.jet2topTagged = array('i', [-1])
         self.jet1bTagged = array('i', [-1])
         self.jet2bTagged = array('i', [-1])
 
         self.htSum = array('f', [-1.0])
-        self.triggerEff = array('f', [1.0])
+        self.triggerWeight = array('f', [1.0])
+        self.pileupWeight = array('f', [1.0])
+        self.pdfWeight = array('f', [1.0])
+        self.pdfWeightNom = array('f', [1.0])
+        self.pdfWeightUp = array('f', [1.0])
+        self.pdfWeightDown = array('f', [1.0])
+        self.unfoldWeightUsed = array('f', [1.0])
 
         self.pass400pt = array('f', [-1.0])
         self.pass750pt = array('f', [-1.0])
@@ -164,7 +189,6 @@ class tree_maker:
 
         self.treeVars.Branch('npv', self.npv, 'npv/I')
         self.treeVars.Branch('index', self.index, 'index/I')
-        self.treeVars.Branch('trigWt', self.trigWt, 'trigWt/F')
         self.treeVars.Branch('MET', self.MET, 'MET/F')
 
         self.treeVars.Branch('jet1pt', self.jet1pt, 'jet1pt/F')
@@ -193,9 +217,7 @@ class tree_maker:
         self.treeVars.Branch('jet2tau31', self.jet2tau31, 'jet2tau31/F')
         self.treeVars.Branch('jet1tau21', self.jet1tau21, 'jet1tau21/F')
         self.treeVars.Branch('jet2tau21', self.jet2tau21, 'jet2tau21/F')
-        self.treeVars.Branch('jet1nSubj', self.jet1nSubj, 'jet1nSubj/I')
-        self.treeVars.Branch('jet2nSubj', self.jet2nSubj, 'jet2nSubj/I')
-
+        self.treeVars.Branch('nJets', self.nJets, 'nJets/I')
         self.treeVars.Branch('deltaY', self.deltaY, 'deltaY/F')
         self.treeVars.Branch('deltaPhi', self.deltaPhi, 'deltaPhi/F')
 
@@ -205,7 +227,13 @@ class tree_maker:
         self.treeVars.Branch('jet2bTagged', self.jet2bTagged, 'jet2bTagged/I')
 
         self.treeVars.Branch('htSum', self.htSum, 'htSum/F')
-        self.treeVars.Branch('triggerEff', self.triggerEff, 'triggerEff/F')
+        self.treeVars.Branch('triggerWeight', self.triggerWeight, 'triggerWeight/F')
+        self.treeVars.Branch('pileupWeight', self.pileupWeight, 'pileupWeight/F')
+        self.treeVars.Branch('pdfWeight', self.pdfWeight, 'pdfWeight/F')
+        self.treeVars.Branch('pdfWeightNom', self.pdfWeightNom, 'pdfWeightNom/F')
+        self.treeVars.Branch('pdfWeightUp', self.pdfWeightUp, 'pdfWeightUp/F')
+        self.treeVars.Branch('pdfWeightDown', self.pdfWeightDown, 'pdfWeightDown/F')
+        self.treeVars.Branch('unfoldWeightUsed', self.unfoldWeightUsed, 'unfoldWeightUsed/F')
 
         self.Mtt = array('f', [-1.0])
         self.jetangle = array('f', [-10.0])
@@ -292,57 +320,10 @@ class tree_maker:
         self.cutflow = ROOT. TH1D("cutflow", "cutfow", 10, 0, 10 )
         self.cutflow.Sumw2()
 
-        # self.allEvents = ROOT.TTree('allEvents', 'allEvents')
-        # self.allJet1pt = array('f', [-1.0])
-        # self.allEvents.Branch('allJet1pt', self.allJet1pt, 'allJet1pt/F')
-        # self.allEvents.Branch('allJet2pt', self.allJet2pt, 'allJet2pt/F')
-        # self.allEvents.Branch('allJet1eta', self.allJet1eta, 'allJet1eta/F')
-        # self.allEvents.Branch('allJet2eta', self.allJet2eta, 'allJet2eta/F')
-        # self.allEvents.Branch('allGenJet1pt', self.allGenJet1pt, 'allGenJet1pt/F')
-        # self.allEvents.Branch('allGenJet2pt', self.allGenJet2pt, 'allGenJet2pt/F')
-        # self.allEvents.Branch('allGenJet1eta', self.allGenJet1eta, 'allGenJet1eta/F')
-        # self.allEvents.Branch('allGenJet2eta', self.allGenJet2eta, 'allGenJet2eta/F')
-
         # We don't want to fill anything if the event is outside the mtt range we're looking for
         self.noFill = 0
 
     def analyze(self, event):
-        # // To get the trigger names
-        # edm::Handle< edm::TriggerResults > h_trigresults
-        # edm::InputTag triggerResultsSrc_("TriggerResults", "", "HLT")
-        # iEvent.getByLabel( triggerResultsSrc_, h_trigresults )
-        # const edm::TriggerResults* thing = h_trigresults.product()
-        # edm::TriggerNames const & trig_names = iEvent.triggerNames(*thing)
-        # std::vector<std::string> const & trig_strings = trig_names.triggerNames()
-
-        # if self.doTrigger == True:
-        if self.isMC == False:
-            event.getByLabel (self.triggerLabel, self.triggerHandle)
-            trigNames = event.object().triggerNames(self.triggerHandle.product())
-
-            path400 = "HLT_HT400"
-            path750 = "HLT_HT750"
-
-            index400 = trigNames.triggerIndex(path400)
-            index750 = trigNames.triggerIndex(path750)
-
-            for version in ["_v1","_v2","_v3","_v4","_v5","_v6","_v7"]:
-                newpath400 = path400+version
-                newindex400 = trigNames.triggerIndex(newpath400)
-                if newindex400==trigNames.size():
-                    continue
-                else:
-                    newpath750 = path750+version
-                    break
-
-            index400 = trigNames.triggerIndex(newpath400)
-            index750 = trigNames.triggerIndex(newpath750)
-
-            # print index400,index750
-            # print trigNames.triggerName(index400), trigNames.triggerName(index750)
-
-            pass400 = self.triggerHandle.product().accept(index400)
-            pass750 = self.triggerHandle.product().accept(index750)
 
         self.run[0] = event.object().id().run()
         self.event[0] = event.object().id().event()
@@ -351,6 +332,101 @@ class tree_maker:
         event.getByLabel (self.npvLabel, self.npvHandle)
         event.getByLabel (self.metPtLabel, self.metPtHandle)
         event.getByLabel (self.metPhiLabel, self.metPhiHandle)
+        npv = self.npvHandle.product()[0]
+        metPt = self.metPtHandle.product()[0]
+        metPhi = self.metPhiHandle.product()[0]
+
+       
+        #Save information about trigger paths so we can calculate the trigger sf later
+        event.getByLabel (self.triggerLabel, self.triggerHandle)
+        trigNames = event.object().triggerNames(self.triggerHandle.product())
+
+        path400 = "HLT_HT400"
+        path750 = "HLT_HT750"
+        index400 = trigNames.triggerIndex(path400)
+        index750 = trigNames.triggerIndex(path750)
+
+        for version in ["_v1","_v2","_v3","_v4","_v5","_v6","_v7"]:
+            newpath400 = path400+version
+            newindex400 = trigNames.triggerIndex(newpath400)
+            if newindex400==trigNames.size():
+                continue
+            else:
+                newpath750 = path750+version
+                break
+
+        index400 = trigNames.triggerIndex(newpath400)
+        index750 = trigNames.triggerIndex(newpath750)
+        pass400 = self.triggerHandle.product().accept(index400)
+        pass750 = self.triggerHandle.product().accept(index750)
+
+
+        #Pileup SF. If data, do nothing. Otherwise you should be passed the appropriate histogram for nominal, up, or down.
+        #Simply get the weight from it
+        if self.isMC == False:
+            self.pileupWeight[0] = 1.0
+        elif self.usePileup:
+            self.pileupWeight[0] = self.pileup.GetBinContent(self.pileup.FindBin(npv))
+        else:
+            self.pileupWeight[0] = 1.0
+
+        #Include pileup reweighting for the response matrix
+        weight = 0
+        weight = self.unfoldWeight * self.pileupWeight[0]
+
+        #PDF
+        #If present and in MC, calculate PDF to scale up and down. Otherwise return weight = 1
+        if self.usePDF == False:
+            self.pdfWeight[0] = 1.0
+        else:
+            event.getByLabel (self.pdfWeightLabel, self.pdfWeightHandle)
+            pdfWeights = self.pdfWeightHandle.product()
+            self.pdfWeightNom[0] = pdfWeights[0]
+            # print "Event weight for central PDF:",pdfWeights[0]
+
+            tempPdfWeight1 = 0
+            tempPdfWeight2 = 0
+            tempPdfWeightUp = 0
+            tempPdfWeightDown = 0
+            for pdfIndex in xrange(1,len(pdfWeights),2):
+                tempPdfWeight1 = pdfWeights[pdfIndex]  -1.0
+                tempPdfWeight2 = pdfWeights[pdfIndex+1]-1.0
+
+                # if tempPdfWeight1>1 or tempPdfWeight2>1:
+                #     print tempPdfWeight1,tempPdfWeight2
+
+                if(tempPdfWeight1>tempPdfWeight2):
+                    if(tempPdfWeight1<0.):
+                        tempPdfWeight1=0.
+                    if(tempPdfWeight2>0.):
+                        tempPdfWeight2=0.
+                    tempPdfWeightUp += tempPdfWeight1*tempPdfWeight1
+                    tempPdfWeightDown += tempPdfWeight2*tempPdfWeight2
+                else:
+                    if(tempPdfWeight2<0.):
+                        tempPdfWeight2=0.
+                    if(tempPdfWeight1>0.):
+                        tempPdfWeight1=0.
+                    tempPdfWeightUp += tempPdfWeight2*tempPdfWeight2
+                    tempPdfWeightDown += tempPdfWeight1*tempPdfWeight1
+
+            # if sqrt(tempPdfWeightDown) > .9:
+            #     print sqrt(tempPdfWeightUp),sqrt(tempPdfWeightDown)
+
+            self.pdfWeightUp[0] = 1.0 + sqrt(tempPdfWeightUp)
+            self.pdfWeightDown[0] = 1.0 - sqrt(tempPdfWeightDown)
+            if self.usePDF>1:
+                self.pdfWeight[0] = self.pdfWeightUp[0]
+            elif self.usePDF<0:
+                self.pdfWeight[0] = self.pdfWeightDown[0]
+            else:
+                self.pdfWeight[0] = 1.0
+
+            if self.pdfWeight[0]>10.0:
+                return
+
+        #Include pdf reweighting for the response matrix
+        weight = weight * self.pdfWeight[0]
 
         event.getByLabel (self.prunedLabel, self.prunedHandle)
         event.getByLabel (self.prunedUCLabel, self.prunedUCHandle)
@@ -367,10 +443,6 @@ class tree_maker:
         event.getByLabel (self.t2Label, self.t2Handle)
         event.getByLabel (self.t3Label, self.t3Handle)
         event.getByLabel (self.t4Label, self.t4Handle)
-
-        npv = self.npvHandle.product()[0]
-        metPt = self.metPtHandle.product()[0]
-        metPhi = self.metPhiHandle.product()[0]
 
         CSVVals = self.CSVHandle.product()
 
@@ -398,6 +470,7 @@ class tree_maker:
         #Reorder to make sure the highest pT is first. This is after any JEC. Is this correct?
         #pt_sorted_jets = pj
         pt_sorted_jets = ReorderByPt(pj)
+        self.nJets[0] = len(pt_sorted_jets)
 
         #The very first thing we want to do is, if we are running over MC, to get the genParticle info
         #and save this. If we are running over the Powheg full sample, we need to only save events
@@ -409,24 +482,13 @@ class tree_maker:
 
         # if self.isMC == True and self.unfoldWeight > 0:
         if self.doUnfold == True:
-            # doUnfold = True
             event.getByLabel( self.genParticlesLabel, self.genParticlesHandle )
             genParticles  = self.genParticlesHandle.product()
-            
-            # if self.genParticlesHandle.isValid() == False :
-            #     print "DEBUG: genParticlesPtHandle is not valid! continuing..." 
-            #     return
-            
             
             genT = ROOT.TLorentzVector()
             genTbar = ROOT.TLorentzVector()
             genJet1 = ROOT.TLorentzVector()
             genJet2 = ROOT.TLorentzVector()
-            
-            # hadTDecay = 0     # 1 = hadronic, 0 = leptonic
-            # hadTbarDecay = 0    # 1 = hadronic, 0 = leptonic
-            # self.isGenLeptonic[0] = 0
-            # self.noFill = 0
             
             # loop over gen particles
             # we want to loop over all the gen particles and save some info
@@ -437,84 +499,47 @@ class tree_maker:
             self.isGenHadronic[0] = 1
             for igen in xrange( len(genParticles) ) :
 
+                #Make sure we have a stable particle
                 if  genParticles[igen].status() != 3 :
                     continue
+                #If we have a lepton, note that we're not hadronic
                 if  abs(genParticles[igen].pdgId()) == 11 or abs(genParticles[igen].pdgId()) == 13 or abs(genParticles[igen].pdgId()) == 15 :
                     self.isGenHadronic[0] = 0
                     continue
-                    # self.noFill = 1
-                    # return
-
+                #Make sure we have a top quark/antiquark
                 if  abs(genParticles[igen].pdgId()) != 6 :
                     continue
-                
-                # if  abs(genParticles[igen].pdgId()) > 16 :
-                #     continue
 
+                #Take the top quark as the first parton/jet
                 if genParticles[igen].pdgId() == 6 :
                     gen = ROOT.TLorentzVector()
                     gen.SetPtEtaPhiM( genParticles[igen].pt(), genParticles[igen].eta(), genParticles[igen].phi(), genParticles[igen].mass() )
                     genT = gen
-                    # self.isGenHadronic
-                    # hadTDecay = 1
+                #Take the top antiquark as the second parton/jet
                 elif genParticles[igen].pdgId() == -6 :
                     gen = ROOT.TLorentzVector()
                     gen.SetPtEtaPhiM( genParticles[igen].pt(), genParticles[igen].eta(), genParticles[igen].phi(), genParticles[igen].mass() )
                     genTbar = gen
 
-            #We only want the hadronic events
-            # if isGenLeptonic:
-            #     return
-
-
-                    # hadTbarDecay = 1
-                # If there is an antilepton (e+, mu+, tau+) then the T is leptonic
-                # elif ( genParticles[igen].pdgId() == -11 or genParticles[igen].pdgId() == -13 or genParticles[igen].pdgId() == -15) :
-                #     hadTDecay = 0
-                # # If there is an lepton (e-, mu-, tau-) then the Tbar is leptonic
-                # elif ( genParticles[igen].pdgId() == 11 or genParticles[igen].pdgId() == 13 or genParticles[igen].pdgId() == 15) :                
-                #     hadTbarDecay = 0
-
-            #This might crash, but I want to try to save mtt for all possible events, even if there's a lepton in the event
-
-            # If we have both a t and a tbar, then we've passed the parton level selection
-            # If these events have a mTT > 700 for the full sample, we return...fill NOTHING
-            # if hadTDecay == True and hadTbarDecay == True:
-                #Events generated with ttbar
-                # self.cutflow.Fill(11)
-                # passParton = True
-                # genPartonJetMtt = (genT+genTbar).M()
-                #Allows us to get the mTT<700
-
-            #Sort the t and tbar by pT
-            # if genT.Pt() > genTbar.Pt():
             genJet1 = genT
             genJet2 = genTbar
-            #     self.genPartonJet1id[0] = 6
-            # else:
-            #     genJet1 = genTbar
-            #     genJet2 = genT
-            #     self.genPartonJet1id[0] = -6
-
+            
+            #If we have 2 valid genJets, save the Mtt spectrum which we need for splicing ttbar MC
             if genJet2.Pt() > 0 and genJet1.Pt() > 0:
                 genPartonJetMtt = (genT+genTbar).M()
                 self.genPartonJetMtt[0] = genPartonJetMtt
             
+            #If we only want the <700 Mtt events, don't save anything else
             if self.invMassCut > 0 and genPartonJetMtt >= self.invMassCut:
                 self.noFill = 1
                 return
             else:
                 self.noFill = 0
 
-            #Events passing massCut (full powheg only difference)
-            # if self.isGenLeptonic[0] == 0:
-            #     self.isGenHadronic[0] = 1
-            # elif self.isGenLeptonic[0] == 1:
-            #     self.isGenHadronic[0]
             self.cutflow.Fill(12)
             self.index[0] = 2
-            #Fill our generator level cuts. we need to remember to fill the tree before returning in the Miss case
             
+            #Fill our generator level cuts. we need to remember to fill the tree before returning in the Miss case
             if genJet1.Pt() > 0:
                 self.genPartonJet1pt[0] = genJet1.Pt()
                 self.genPartonJet1eta[0] = genJet1.Eta()
@@ -526,25 +551,20 @@ class tree_maker:
                 self.genPartonJet2eta[0] = genJet2.Eta()
                 self.genPartonJet2phi[0] = genJet2.Phi()
                 self.genPartonJet2mass[0] = genJet2.M()
-            # self.genPartonJetMtt[0] = genPartonJetMtt
-        # else:
-        #     self.isGenHadronic[0] = 0
 
-        #Fill the pT of the leading jet before ANY reco cuts so we can get the efficiency to get the diff xsection
-        # self.allEvents.Fill(pt_sorted_jets.Pt());
-        # if len(pj) > 0:
-        #     self.allJet1pt[0] = pt_sorted_jets[0].Pt()
-        #     self.allEvents.Fill()
-        #     #Events with valid handle
-        #     self.cutflow.Fill(2);
-
+        #At this point we have not passed any reco cuts
         self.passKinCuts[0] = 0
+
+        #############################################################################3
+        #A note on response matrix weights. At this time, we aren't sure we have a jet, so we can't get the trigger efficiency.
+        #This might make us off by a little.
+        #############################################################################3
+        self.unfoldWeightUsed[0]=weight
 
         #Two jets:
         if len(pj) < 2 or len(unpj) < 2 or len(ucPJ) < 2:
             if self.doUnfold and self.isGenHadronic[0] == 1:
-                self.response.Miss(self.genPartonJet1pt[0], self.unfoldWeight)
-                # self.treeVars.Fill()
+                self.response.Miss(self.genPartonJet1pt[0], weight)
             return
     
         #Events with 2 or more valid jets
@@ -558,14 +578,13 @@ class tree_maker:
                 HTsum += pj[i].pt()
         if nTopCand < 2:
             if self.doUnfold and self.isGenHadronic[0] == 1:
-                self.response.Miss(self.genPartonJet1pt[0], self.unfoldWeight)
-                # self.treeVars.Fill()
+                self.response.Miss(self.genPartonJet1pt[0], weight)
             return
-        #make sure we are within correct eta
+        
+        #Make sure we are within correct eta
         elif abs(pt_sorted_jets[0].Eta()) > 2.4 or abs(pt_sorted_jets[1].Eta()) > 2.4:
             if self.doUnfold and self.isGenHadronic[0] == 1:
-                self.response.Miss(self.genPartonJet1pt[0], self.unfoldWeight)
-                # self.treeVars.Fill()
+                self.response.Miss(self.genPartonJet1pt[0], weight)
             return
 
         #Events with 2 top candidates (pt > 400) and eta < 2.4
@@ -584,15 +603,38 @@ class tree_maker:
         ca2.SetPtEtaPhiM(pt_sorted_jets[1].Pt(), pt_sorted_jets[1].Eta(), pt_sorted_jets[1].Phi(), pt_sorted_jets[1].M())
 
         #Fill the trigger info
+        if pass400:
+            self.pass400pt[0] = ca1.Pt()
+        else:
+            self.fail400pt[0] = ca1.Pt()
+        if pass750:
+            self.pass750pt[0] = ca1.Pt()
+        else:
+            self.fail750pt[0] = ca1.Pt()
+
+        #Trigger SF. If data, do nothing. Otherwise you should be passed the appropriated histogram for nominal, up, or down.
+        #Simply get the weight from it
         if self.isMC == False:
-            if pass400:
-                self.pass400pt[0] = ca1.Pt()
-            else:
-                self.fail400pt[0] = ca1.Pt()
-            if pass750:
-                self.pass750pt[0] = ca1.Pt()
-            else:
-                self.fail750pt[0] = ca1.Pt()
+            self.triggerWeight[0] = 1.0
+        elif self.useTrigger:
+            bin = 0
+            bin = self.trigger.FindBin(ca1.Pt())
+            self.triggerWeight[0] = self.trigger.GetBinContent(bin)
+            # print bin,ca1.Pt(),self.trigger.GetBinContent(bin),self.triggerWeight[0]
+            if self.useTrigger > 1:
+                # self.triggerWeight[0] = self.trigger.GetBinContent(bin) + self.trigger.GetBinError(bin)
+                self.triggerWeight[0] = self.triggerWeight[0] + self.trigger.GetBinError(bin)
+            elif self.useTrigger < 0:
+                # self.triggerWeight[0] = self.trigger.GetBinContent(bin) - self.trigger.GetBinError(bin)
+                self.triggerWeight[0] = self.triggerWeight[0] - self.trigger.GetBinError(bin)
+            if self.triggerWeight[0] < 0.0:
+                self.triggerWeight[0] = 0.0
+        else:
+            self.triggerWeight[0] = 1.0
+
+        #Include trigger reweighting for the response matrix
+        weight = weight * self.triggerWeight[0]
+        self.unfoldWeightUsed[0]=weight
 
         #Match unpruned jets with pruned - so we have both subjet btagging and nsubjettiness
         #This returns the index of the jet in the first collection that matches within dr = 0.4 to the jet of the second argument
@@ -652,14 +694,12 @@ class tree_maker:
         if jet1matchIndex==-1 or jet1matchIndex_pj==-1 or jet1matchIndex_ucPJ==-1:
             if self.doUnfold and self.isGenHadronic[0] == 1:
                 self.response.Miss(self.genPartonJet1pt[0], self.unfoldWeight)
-                # self.treeVars.Fill()
             return
         
         #Make sure matching is correct for jet2
         if jet2matchIndex==-1 or jet2matchIndex_pj==-1 or jet2matchIndex_ucPJ==-1:
             if self.doUnfold and self.isGenHadronic[0] == 1:
                 self.response.Miss(self.genPartonJet1pt[0], self.unfoldWeight)
-                # self.treeVars.Fill()
             return
         
         #Events with valid ca-other jet matches
@@ -672,12 +712,10 @@ class tree_maker:
         if Tau2[jet1matchIndex] == 0 or Tau2[jet2matchIndex] == 0:
             if self.doUnfold and self.isGenHadronic[0] == 1:
                 self.response.Miss(self.genPartonJet1pt[0], self.unfoldWeight)
-                # self.treeVars.Fill()
             return
         if Tau1[jet1matchIndex] == 0 or Tau1[jet2matchIndex] == 0:
             if self.doUnfold and self.isGenHadronic[0] == 1:
                 self.response.Miss(self.genPartonJet1pt[0], self.unfoldWeight)
-                # self.treeVars.Fill()
             return
 
         self.jet1tau1[0] = Tau1[jet1matchIndex]
@@ -742,6 +780,18 @@ class tree_maker:
         self.jet1bTagged[0] = self.jet1maxSubjetCSV[0] > 0.679
         self.jet2bTagged[0] = self.jet2maxSubjetCSV[0] > 0.679
 
+        #nSubjettiness and btag weights for response matrix
+        numBtags = self.jet1bTagged[0] + self.jet2bTagged[0]
+        # btagWt = math.pow(self.btagSF,numBtags)*math.pow(1-self.btagSF,2-numBtags)
+        btagWt = math.pow(self.btagSF,numBtags)
+        isNsubTag = 0
+        if self.jet1tau32[0] < 0.55:
+            isNsubTag = 1
+        nsubWt = math.pow(self.nsubSF,isNsubTag)
+        #Final weight to be put into response matrix. Shouldn't matter if btagged or pass/fail tau32
+        weight = weight * self.unfoldWeight * btagWt * nsubWt
+        self.unfoldWeightUsed[0]=weight
+
         # self.jet1topTagged[0] = self.jet1mass[0] > 140.0 and self.jet1mass[0] < 250.0 and self.jet1pt[0] > 400.
         # self.jet2topTagged[0] = self.jet2mass[0] > 140.0 and self.jet2mass[0] < 250.0 and self.jet2pt[0] > 400.
 
@@ -755,17 +805,18 @@ class tree_maker:
             self.cutflow.Fill(7)
             if self.doUnfold:
                 if self.isGenHadronic[0] == 1:
-                    self.response.Fill(self.jet1pt[0], self.genPartonJet1pt[0], self.unfoldWeight)
+                    # self.response.Fill(self.jet1pt[0], self.genPartonJet1pt[0], self.unfoldWeight)
+                    self.response.Fill(self.jet1pt[0], self.genPartonJet1pt[0], weight)
                 else:
-                    self.response.Fake(self.genPartonJet1pt[0], self.unfoldWeight)
+                    # self.response.Fake(self.genPartonJet1pt[0], self.unfoldWeight)
+                    self.response.Fake(self.genPartonJet1pt[0], weight)
         elif self.doUnfold and self.isGenHadronic[0] == 1:
-            self.response.Miss(self.genPartonJet1pt[0], self.unfoldWeight)
+            # self.response.Miss(self.genPartonJet1pt[0], self.unfoldWeight)
+            self.response.Miss(self.genPartonJet1pt[0], weight)
 
-        # self.treeVars.Fill()
         return
 
     def reset(self):
-        # self.allEvents.Fill()
         if not self.noFill:
             self.treeVars.Fill()
 
@@ -775,7 +826,6 @@ class tree_maker:
 
         self.npv[0] = -1
         self.index[0] = -1
-        self.trigWt[0] = -1.0
         self.MET[0] = -1.0
 
         self.jet1pt[0] = -1.0
@@ -804,6 +854,7 @@ class tree_maker:
         self.jet2tau31[0] = -1.0
         self.jet1tau21[0] = -1.0
         self.jet2tau21[0] = -1.0
+        self.nJets[0] = -1
         self.deltaY[0] = -10.0
         self.deltaPhi[0] = -10.0
 
@@ -813,7 +864,13 @@ class tree_maker:
         self.jet2topTagged[0] = -1
 
         self.htSum[0] = -1.0
-        self.triggerEff[0] = -1.0
+        self.triggerWeight[0] = 1.0
+        self.pdfWeight[0] = 1.0
+        self.pileupWeight[0] = 1.0
+        self.pdfWeightNom[0] = 1.0
+        self.pdfWeightUp[0] = 1.0
+        self.pdfWeightDown[0] = 1.0
+        self.unfoldWeightUsed[0] = 1.0
 
         self.Mtt[0] = -1.0
         self.jetangle[0] = -10.0
@@ -847,12 +904,10 @@ class tree_maker:
         self.passKinCuts[0] = -1
         self.passFullSel[0] = -1
 
-        self.pass400pt[0] = -1
-        self.pass750pt[0] = -1
-        self.fail400pt[0] = -1
-        self.fail750pt[0] = -1
-
-        # self.allJet1pt[0] = -1.0
+        self.pass400pt[0] = -1.0
+        self.pass750pt[0] = -1.0
+        self.fail400pt[0] = -1.0
+        self.fail750pt[0] = -1.0
 
     def __del__(self):  
         # print self.out_info
@@ -861,5 +916,7 @@ class tree_maker:
             self.response.Write()
         self.f.Write()
         self.f.Close()
-        # if self.doTrigger:
-        #     self.triggerFile.Close()
+        if self.useTrigger:
+            self.triggerFile.Close()
+        if self.usePileup:
+            self.pileupFile.Close()
