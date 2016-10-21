@@ -40,6 +40,11 @@ parser.add_option('--triggerFile', metavar='N', type='string', action='store',
                     dest='triggerFile',
                     help='trigger file')
 
+parser.add_option('--pileupFile', metavar='N', type='string', action='store',
+                    default='',
+                    dest='pileupFile',
+                    help='pileup file')
+
 parser.add_option('--config', metavar='N', type='string', action='store',
                     default='',
                     dest='config',
@@ -51,7 +56,7 @@ parser.add_option('--isMC', metavar='N', type='int', action='store',
                     help='are we running over MC(1) or not(0)')
 
 parser.add_option('--unfoldWeight', metavar='N', type='float', action='store',
-                    default=-1,
+                    default=1,
                     dest='unfoldWeight',
                     help='mc weight to be used when making the response matrix')
 
@@ -64,6 +69,27 @@ parser.add_option('--doUnfold', metavar='N', type='int', action='store',
                     default=0,
                     dest='doUnfold',
                     help='Whether or not to unfold. Needs to be off for JER/JES currently')
+
+parser.add_option('--includeTrigger', metavar='N', type='int', action='store',
+                    default=0,
+                    dest='includeTrigger',
+                    help='Whether to include Trigger reweighting. (1 for nominal weighting, >1 for Trigger up, <0 for Trigger down, 0 for off')
+
+parser.add_option('--includePileup', metavar='N', type='int', action='store',
+                    default=0,
+                    dest='includePileup',
+                    help='Whether to include Pileup reweighting. 0 for no weighting. Otherwise make sure to include the correct file for systematics.')
+
+parser.add_option('--includePDF', metavar='N', type='int', action='store',
+                    default=0,
+                    dest='includePDF',
+                    help='Whether to include PDF reweighting. (1 for nominal weighting, >1 for PDF up, <0 for PDF down')
+
+parser.add_option('--useSyst', metavar='N', type='string', action='store',
+                    default="",
+                    dest='useSyst',
+                    help='Which systematic (JERup,JERdn,JESup,JERdn) to run over. Should be blank for data')
+
 
 
 (options, args) = parser.parse_args()
@@ -92,8 +118,9 @@ files = files[(section-1)*numFiles:limit]
 
 events = Events (files)
 ntotal = events.size()
-
-analyzer = tree_maker(options.outfile, options.triggerFile, options.isMC, options.unfoldWeight, options.invMassCut, options.doUnfold)
+   
+analyzer = tree_maker(options.outfile, options.triggerFile, options.includeTrigger, options.pileupFile, options.includePileup, options.includePDF, 
+                        options.isMC, options.unfoldWeight, options.invMassCut, options.doUnfold, options.useSyst)
 
 count = 0
 print "Start looping"

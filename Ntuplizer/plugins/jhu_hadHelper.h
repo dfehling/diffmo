@@ -350,14 +350,14 @@ namespace HADDF
 		// angular_UP/DOWN
 		double etaScale = 1.0;
 		double phiScale = 1.0;
-		if( fabs(angularSmear) > 0.0 && theMatchingGenJet.pt() > 15.0 ) 
+		if( fabs(angularSmear) > -1.0 && theMatchingGenJet.pt() > 15.0 ) 
 		{
 			double recoeta = jet->eta();
 			double geneta = theMatchingGenJet.eta();
 			double deltaeta = (recoeta-geneta)*angularSmear;
 			etaScale = std::max((double) 0.0, (recoeta+deltaeta)/recoeta);
 		}
-		if( fabs(angularSmear) > 0.0 && theMatchingGenJet.pt() > 15.0 ) 
+		if( fabs(angularSmear) > -1.0 && theMatchingGenJet.pt() > 15.0 ) 
 		{
 			double recophi = jet->phi();
 			double genphi = theMatchingGenJet.phi();

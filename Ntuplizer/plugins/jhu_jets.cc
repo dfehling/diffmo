@@ -31,7 +31,7 @@ private:
 	std::string 	btagType_;
 	edm::InputTag   rhoSrc_;          /// mean pt per unit area
 	std::string 	useNsub_;
-	std::string 	subcorr_;
+	// std::string 	subcorr_;
 	signed int  	basecorr_;
 	double			scale_;
 	double 			smear_;
@@ -183,7 +183,7 @@ bool jhuHadronic::filter(edm::Event &iEvent, const edm::EventSetup &iSetup)
 	std::auto_ptr<std::vector<double>> sub1csv(new std::vector<double>);
 	std::auto_ptr<std::vector<double>> sub2csv(new std::vector<double>);
 	std::auto_ptr<std::vector<double>> sub3csv(new std::vector<double>);
-	// std::auto_ptr<p4_vector> jets_CORR( new p4_vector() );
+	std::auto_ptr<p4_vector> jets_CORR( new p4_vector() );
 	// std::auto_ptr<p4_vector> sub0_CORR(new p4_vector());
 	// std::auto_ptr<p4_vector> sub1_CORR(new p4_vector());
 	// std::auto_ptr<p4_vector> sub2_CORR(new p4_vector());

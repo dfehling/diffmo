@@ -8,16 +8,29 @@ import sys
 from Analysis.Tools.JetTools import *
 
 class tree_maker:
-    def __init__(self, outputname, triggerFileStr):
+    def __init__(self, outputname, triggerFileStr, useTrigger, pileupFileStr, usePileup, usePDF, isMC, unfoldWeight, invMassCut, doUnfold):
         # load all the event info:
         # self.out_info = 0
         self.name = outputname
-        self.triggerFileStr = triggerFileStr
+        # self.triggerFileStr = triggerFileStr
+        self.useTrigger = useTrigger
+        self.pileupFileStr = pileupFileStr
+        self.usePileup = usePileup
+        # self.pdfFileStr = pdfFileStr
+        # self.usePDF = usePDF
+        self.isMC = isMC
+        # self.unfoldWeight = unfoldWeight
+        self.invMassCut = invMassCut
+        # self.doUnfold = doUnfold
 
         #General Quantities
         #N Primary Vertices
         self.npvHandle = Handle( "unsigned int" )
+        # We need the true distribution to properly PU reweight
         self.npvLabel  = ( "jhuGen", "npv" )
+        # However this is always 0 for some reason
+        if self.isMC:
+            self.npvLabel  = ( "jhuGen", "npvTrue" )
 
         #MET Pt and Phi - why not eta?
         self.metPtHandle = Handle ( "double" )
@@ -83,15 +96,15 @@ class tree_maker:
 
     def __book__(self):
 
-        if (self.triggerFileStr == ''):
-            self.doTrigger = False
+        if (self.pileupFileStr == ''):
+            self.usePileup = False
         else:
-            self.triggerFile = ROOT.TFile(self.triggerFileStr + ".root")
-            self.triggerFile.cd()
-            self.trigger = self.triggerFile.Get("TRIGGER_EFF").Clone()
-            self.trigger.SetName('trigger')
-            ROOT.SetOwnership( self.trigger, False )
-            self.doTrigger = True
+            self.pileupFile = ROOT.TFile(self.pileupFileStr + ".root")
+            self.pileupFile.cd()
+            self.pileup = self.pileupFile.Get("pileup").Clone()
+            self.pileup.SetName('pileup')
+            ROOT.SetOwnership( self.pileup, False )
+            self.usePileup = True
 
         print "Booking Histograms and Trees..."
         self.f = ROOT.TFile( self.name + ".root", "recreate" )
@@ -103,7 +116,6 @@ class tree_maker:
         self.lumi = array('i', [-1])
         
         self.index = array('i', [-1])
-        self.trigWt = array('f', [-1.0])
 
         self.npv = array('i', [-1])
         self.MET = array('f', [-1.0])
@@ -122,6 +134,7 @@ class tree_maker:
         self.jet1tau2 = array('f', [-1.0])
         self.jet1tau3 = array('f', [-1.0])
         self.jet1tau4 = array('f', [-1.0])
+        self.nJets = array('i', [-1])
         self.deltaY = array('f', [-10.0])
         self.deltaPhi = array('f', [-10.0])
 
@@ -137,8 +150,12 @@ class tree_maker:
         self.jet2bTaggedSub = array('i', [-1])
 
         self.htSum = array('f', [-1.0])
-        self.triggerEff = array('f', [1.0])
+        self.triggerWeight = array('f', [1.0])
+        self.pileupWeight = array('f', [1.0])
 
+        self.passTriggerPt = array('f', [-1.0])
+        self.failTriggerPt = array('f', [-1.0])
+        
         self.muonPt = array('f', [-1.0])
         self.muonEta = array('f', [-10.0])
         self.muonPhi = array('f', [-10.0])
@@ -147,6 +164,10 @@ class tree_maker:
         self.muonIso = array('f', [-1.0])
         self.muonIsLoose = array('i', [-1])
         self.muonIsTight = array('i', [-1])
+        self.muonDr = array('f', [-1.0])
+        self.muonPtRel = array('f', [-1.0])
+        self.passMuon2D = array('i', [-1])
+        self.nMuons = array('i', [-1])
 
         self.wPt = array('f', [-1.0])
         self.wEta = array('f', [-10.0])
@@ -165,7 +186,6 @@ class tree_maker:
 
         self.treeVars.Branch('npv', self.npv, 'npv/I')
         self.treeVars.Branch('index', self.index, 'index/I')
-        self.treeVars.Branch('trigWt', self.trigWt, 'trigWt/F')
         self.treeVars.Branch('MET', self.MET, 'MET/F')
 
         self.treeVars.Branch('jet1pt', self.jet1pt, 'jet1pt/F')
@@ -187,6 +207,7 @@ class tree_maker:
         self.treeVars.Branch('jet1tau31', self.jet1tau31, 'jet1tau31/F')
         self.treeVars.Branch('jet1tau21', self.jet1tau21, 'jet1tau21/F')
         self.treeVars.Branch('jet1nSubj', self.jet1nSubj, 'jet1nSubj/I')
+        self.treeVars.Branch('nJets', self.nJets, 'nJets/I')
 
         self.treeVars.Branch('deltaY', self.deltaY, 'deltaY/F')
         self.treeVars.Branch('deltaPhi', self.deltaPhi, 'deltaPhi/F')
@@ -197,7 +218,11 @@ class tree_maker:
         self.treeVars.Branch('jet1bTaggedSub', self.jet1bTaggedSub, 'jet1bTaggedSub/I')
 
         self.treeVars.Branch('htSum', self.htSum, 'htSum/F')
-        self.treeVars.Branch('triggerEff', self.triggerEff, 'triggerEff/F')
+        self.treeVars.Branch('triggerWeight', self.triggerWeight, 'triggerWeight/F')
+        self.treeVars.Branch('pileupWeight', self.pileupWeight, 'pileupWeight/F')
+
+        self.treeVars.Branch('passTriggerPt', self.passTriggerPt, 'passTriggerPt/F')
+        self.treeVars.Branch('failTriggerPt', self.failTriggerPt, 'failTriggerPt/F')
 
         self.treeVars.Branch('muonPt', self.muonPt, 'muonPt/F')
         self.treeVars.Branch('muonEta', self.muonEta, 'muonEta/F')
@@ -207,6 +232,10 @@ class tree_maker:
         self.treeVars.Branch('muonIso', self.muonIso, 'muonIso/F')
         self.treeVars.Branch('muonIsLoose', self.muonIsLoose, 'muonIsLoose/I')
         self.treeVars.Branch('muonIsTight', self.muonIsTight, 'muonIsTight/I')
+        self.treeVars.Branch('muonDr', self.muonDr, 'muonDr/F')
+        self.treeVars.Branch('muonPtRel', self.muonPtRel, 'muonPtRel/F')
+        self.treeVars.Branch('passMuon2D', self.passMuon2D, 'passMuon2D/I')
+        self.treeVars.Branch('nMuons', self.nMuons, 'nMuons/I')
 
         self.treeVars.Branch('wPt', self.wPt, 'wPt/F')
         self.treeVars.Branch('wEta', self.wEta, 'wEta/F')
@@ -228,15 +257,25 @@ class tree_maker:
         self.cutflow.Sumw2()
 
     def analyze(self, event):
-        # // To get the trigger names
-        # edm::Handle< edm::TriggerResults > h_trigresults
-        # edm::InputTag triggerResultsSrc_("TriggerResults", "", "HLT")
-        # iEvent.getByLabel( triggerResultsSrc_, h_trigresults )
-        # const edm::TriggerResults* thing = h_trigresults.product()
-        # edm::TriggerNames const & trig_names = iEvent.triggerNames(*thing)
-        # std::vector<std::string> const & trig_strings = trig_names.triggerNames()
-
+        #Fill trigger info
         event.getByLabel (self.triggerLabel, self.triggerHandle)
+        trigNames = event.object().triggerNames(self.triggerHandle.product())
+
+        trigPath = "HLT_Mu40_eta2p1"
+
+        trigIndex = trigNames.triggerIndex(trigPath)
+
+        for version in ["_v1","_v2","_v3","_v4","_v5","_v6","_v7","_v8","_v9","_v10","_v11"]:
+            newPath = trigPath+version
+            newIndex = trigNames.triggerIndex(newPath)
+            if newIndex==trigNames.size():
+                continue
+            else:
+                break
+
+        trigIndex = trigNames.triggerIndex(newPath)
+
+        passTrig = self.triggerHandle.product().accept(trigIndex)
 
         self.run[0] = event.object().id().run()
         self.event[0] = event.object().id().event()
@@ -245,6 +284,9 @@ class tree_maker:
         event.getByLabel (self.npvLabel, self.npvHandle)
         event.getByLabel (self.metPtLabel, self.metPtHandle)
         event.getByLabel (self.metPhiLabel, self.metPhiHandle)
+        npv = self.npvHandle.product()[0]
+        metPt = self.metPtHandle.product()[0]
+        metPhi = self.metPhiHandle.product()[0]
 
         event.getByLabel (self.prunedLabel, self.prunedHandle)
         event.getByLabel (self.unprunedLabel, self.unprunedHandle)
@@ -267,9 +309,6 @@ class tree_maker:
         event.getByLabel (self.muonIsLooseLabel, self.muonIsLooseHandle)
         event.getByLabel (self.muonIsTightLabel, self.muonIsTightHandle)
 
-        npv = self.npvHandle.product()[0]
-        metPt = self.metPtHandle.product()[0]
-        metPhi = self.metPhiHandle.product()[0]
 
         CSVVals = self.CSVHandle.product()
 
@@ -288,6 +327,16 @@ class tree_maker:
         muonIso = self.muonIsoHandle.product()
         muonIsLoose = self.muonIsLooseHandle.product()
         muonIsTight = self.muonIsTightHandle.product()
+
+        #Pileup Weight
+        if self.isMC == False:
+            self.pileupWeight[0] = 1.0
+        elif self.usePileup:
+            self.pileupWeight[0] = 0
+            self.pileupWeight[0] = self.pileup.GetBinContent(self.pileup.FindBin(npv))
+        else:
+            self.pileupWeight[0] = 1.0
+
 
         if len(muons) == 0:
             return
@@ -315,10 +364,15 @@ class tree_maker:
         self.muonPhi[0] = muons[0].Phi()
         self.muonMass[0] = .1056583715
 
+        if self.useTrigger:
+            self.triggerWeight[0] = getMuonSF(self.muonEta[0])
+
         self.muonCharge[0] = muonCharge[0]
         self.muonIso[0] = muonIso[0]
         self.muonIsLoose[0] = muonIsLoose[0]
         self.muonIsTight[0] = muonIsTight[0]
+
+        self.nMuons[0] = n_muons
 
         if n_muons != 1:
             return
@@ -331,9 +385,13 @@ class tree_maker:
         unpj = self.unprunedHandle.product()
         pj = self.prunedHandle.product()
 
-        #Two jets, including top tagged:
+        self.nJets[0] = len(pj)
+
+        # Two jets, including top tagged:
         if len(pj) < 2 or len(unpj) < 2:
             return
+        # if self.nJets[0] < 2:
+            # return
     
         #Events with 2 or more valid jets
         self.cutflow.Fill(3);
@@ -366,6 +424,12 @@ class tree_maker:
         ca1.SetPtEtaPhiM(pt_sorted_jets[0].Pt(), pt_sorted_jets[0].Eta(), pt_sorted_jets[0].Phi(), pt_sorted_jets[0].M())
         ca2.SetPtEtaPhiM(pt_sorted_jets[1].Pt(), pt_sorted_jets[1].Eta(), pt_sorted_jets[1].Phi(), pt_sorted_jets[1].M())
 
+        #Fill the trigger info
+        if passTrig:
+            self.passTriggerPt[0] = ca1.Pt()
+        else:
+            self.failTriggerPt[0] = ca1.Pt()
+        
         #Match unpruned jets with pruned - so we have both subjet btagging and nsubjettiness
         #This returns the index of the jet in the first collection that matches within dr = 0.4 to the jet of the second argument
         jet1matchIndex = MatchCol(unpj, ca1)
@@ -386,10 +450,13 @@ class tree_maker:
         self.cutflow.Fill(5)
 
         #Nsubjettiness
-        if Tau2[jet1matchIndex] == 0 or Tau2[jet2matchIndex] == 0:
+        # if Tau2[jet1matchIndex] == 0 or Tau2[jet2matchIndex] == 0:
+        #     return
+        # if Tau1[jet1matchIndex] == 0 or Tau1[jet2matchIndex] == 0:
+        #     return
+        if Tau2[jet1matchIndex] == 0 or Tau1[jet1matchIndex] == 0:
             return
-        if Tau1[jet1matchIndex] == 0 or Tau1[jet2matchIndex] == 0:
-            return
+        
 
         self.jet1tau1[0] = Tau1[jet1matchIndex]
         self.jet1tau2[0] = Tau2[jet1matchIndex]
@@ -412,13 +479,31 @@ class tree_maker:
         newmet = ROOT.TLorentzVector()
         Wcand = ROOT.TLorentzVector()
         newmet.SetPtEtaPhiM(metPt,0,metPhi,0)
-        phivec = [math.cos(metPt), math.sin(metPhi)]
+        phivec = [math.cos(metPhi), math.sin(metPhi)]
         P_muon = math.sqrt((muons[0].Px()*muons[0].Px())+(muons[0].Py()*muons[0].Py())+(muons[0].Pz()*muons[0].Pz()))
         P_phi = (muons[0].Px()*phivec[0])+(muons[0].Py()*phivec[1])
         b = (80.4*80.4) + (P_muon*P_muon) - (muons[0].E()*muons[0].E()) + (2*metPt*P_phi)
-        Pz_met = muons[0].Pz()*b/(2*((muons[0].E()*muons[0].E()) -(muons[0].Pz()*muons[0].Pz())))
-        newmet.SetPz(Pz_met)
-        newmet.SetE(math.sqrt(newmet.Px()*newmet.Px()+newmet.Py()*newmet.Py()+newmet.Pz()*newmet.Pz()))
+        Pz_met = 0
+        # Pz_met = muons[0].Pz()*b/(2*((muons[0].E()*muons[0].E()) -(muons[0].Pz()*muons[0].Pz())))
+        # newmet.SetPz(Pz_met)
+        # newmet.SetE(math.sqrt(newmet.Px()*newmet.Px()+newmet.Py()*newmet.Py()+newmet.Pz()*newmet.Pz()))
+
+        #New 9/6 stolen from Marc after fixing phi bug
+        arg = (muons[0].E()*muons[0].E()) * ((4*metPt*metPt*((muons[0].Pz()*muons[0].Pz())-(muons[0].E()*muons[0].E())))+(b*b))
+        if arg <= 0:
+                Pz_met = muons[0].Pz()*b/(2*((muons[0].E()*muons[0].E()) -(muons[0].Pz()*muons[0].Pz())))
+                newmet.SetPz(Pz_met)
+                newmet.SetE(math.sqrt(newmet.Px()*newmet.Px()+newmet.Py()*newmet.Py()+newmet.Pz()*newmet.Pz()))
+                # return [newmet+muons[0], newmet+muons[0]]
+        else:
+                Pz_met = ((muons[0].Pz()*b)+math.sqrt(arg))/(2*((muons[0].E()*muons[0].E()) -(muons[0].Pz()*muons[0].Pz())))
+                # Pz_met_m = ((muons[0].Pz()*b)-math.sqrt(arg))/(2*((muons[0].E()*muons[0].E()) -(muons[0].Pz()*muons[0].Pz())))
+                newmet.SetPz(Pz_met)
+                newmet.SetE(math.sqrt(newmet.Px()*newmet.Px()+newmet.Py()*newmet.Py()+newmet.Pz()*newmet.Pz()))
+                # newmet_m.SetPz(Pz_met_m)
+                # newmet_m.SetE(math.sqrt(newmet_m.Px()*newmet_m.Px()+newmet_m.Py()*newmet_m.Py()+newmet_m.Pz()*newmet_m.Pz()))
+                # return [newmet_p+muons[0], newmet_m+muons[0]]
+
 
         muon = ROOT.TLorentzVector()
         # jet2 = ROOT.TLorentzVector()
@@ -426,6 +511,21 @@ class tree_maker:
         # jet2.SetPtEtaPhiM(self.jet2pt[0],self.jet2eta[0],self.jet2phi[0],self.jet2mass[0])
         Wcand = newmet + muon
         topCand = Wcand + ca2
+
+        # print 2*((muons[0].E()*muons[0].E()) -(muons[0].Pz()*muons[0].Pz()))
+        # print 2*(muons[0].Pt()*muons[0].Pt())
+        # print sqrt((muons[0].E()*muons[0].E()) - P_muon*P_muon)
+        # print muons[0].M()
+
+        # test_newmet = ROOT.TLorentzVector()
+        # test_Wcand = ROOT.TLorentzVector()
+        # test_newmet.SetPtEtaPhiM(metPt,0,metPhi,0)
+        # test_Wcand = test_newmet + muon
+
+        # print Wcand.E(),Wcand.Pt(),Wcand.Pz(),Wcand.M()
+        # print test_Wcand.E(),test_Wcand.Pt(),test_Wcand.Pz(),test_Wcand.M()
+        
+
 
         self.wPt[0] = Wcand.Pt()
         self.wEta[0] = Wcand.Eta()
@@ -439,6 +539,18 @@ class tree_maker:
         self.lepTopEta[0] = topCand.Eta()
         self.lepTopPhi[0] = topCand.Phi()
         self.lepTopMass[0] = topCand.M()
+        
+        #2D cut
+        muJetIndex=-1
+        muJetIndex = ClosestJet(pj,muon)
+        muonJet = ROOT.TLorentzVector()
+        muonJet.SetPtEtaPhiM(pj[muJetIndex].Pt(),pj[muJetIndex].Eta(),pj[muJetIndex].Phi(),pj[muJetIndex].M())
+        self.muonDr[0] = muon.DeltaR(muonJet)
+        self.muonPtRel[0] = muon.Perp(muonJet.Vect())
+        if self.muonDr[0] > 0.5 or self.muonPtRel[0] > 25.:
+            self.passMuon2D[0] = 1
+        else:
+            self.passMuon2D[0] = 0
       
         #Invariant Mass         
         self.invarmass[0] = (ca1+ca2).M()
@@ -450,9 +562,7 @@ class tree_maker:
         
         #Nsubjettiness
         self.jet1tau32[0] = Tau3[jet1matchIndex] / Tau2[jet1matchIndex]
- 
         self.jet1tau31[0] = Tau3[jet1matchIndex] / Tau1[jet1matchIndex]
- 
         self.jet1tau21[0] = Tau2[jet1matchIndex] / Tau1[jet1matchIndex]
  
         #Fill the btagging information
@@ -491,7 +601,6 @@ class tree_maker:
 
         self.npv[0] = -1
         self.index[0] = -1
-        self.trigWt[0] = -1.0
         self.MET[0] = -1.0
 
         self.jet1pt[0] = -1.0
@@ -515,6 +624,7 @@ class tree_maker:
         self.jet1nSubj[0] = -1
         self.deltaY[0] = -10.0
         self.deltaPhi[0] = -10.0
+        self.nJets[0] = -1
  
         self.jet1bTagged[0] = -1
         self.jet2bTagged[0] = -1
@@ -523,7 +633,23 @@ class tree_maker:
         self.jet1topTagged[0] = -1
  
         self.htSum[0] = -1.0
-        self.triggerEff[0] = -1.0
+        self.triggerWeight[0] = -1.0
+        self.pileupWeight[0] = -1.0
+        self.passTriggerPt[0] = -1.0
+        self.failTriggerPt[0] = -1.0
+
+        self.muonPt[0] = -1.0
+        self.muonEta[0] = -10.0
+        self.muonPhi[0] = -10.0
+        self.muonMass[0] = -1.0
+        self.muonCharge[0] = -1.0
+        self.muonIso[0] = -1.0
+        self.muonIsLoose[0] = -1
+        self.muonIsTight[0] = -1
+        self.muonDr[0] = -1.0
+        self.muonPtRel[0] = -1.0
+        self.passMuon2D[0] = -1
+        self.nMuons[0] = -1
 
         self.wPt[0] = -1.0
         self.wEta[0] = -10.0
@@ -544,5 +670,33 @@ class tree_maker:
         self.f.cd()
         self.f.Write()
         self.f.Close()
-        if self.doTrigger:
-            self.triggerFile.Close()
+        if self.usePileup:
+            self.pileupFile.Close()
+
+# Muon trigger * ID SF
+def getMuonSF(muEta) :
+
+    ## from here: https://twiki.cern.ch/twiki/bin/viewauth/CMS/MuonReferenceEffs#22Jan2013_ReReco_of_2012_data_re
+    ## ID: https://indico.cern.ch/getFile.py/access?contribId=1&resId=2&materialId=slides&confId=257630
+    ## trigger: https://indico.cern.ch/getFile.py/access?contribId=2&resId=0&materialId=slides&confId=257000
+
+    #Sal's numbers
+    # muSF = 1.0
+    # if abs(muEta) < 0.9 :
+    #     muSF = 0.9827 * 0.9925
+    # elif abs(muEta) < 1.2 :
+    #     muSF = 0.9622 * 0.9928
+    # else :
+    #     muSF = 0.9906 * 0.9960
+
+    #From here: https://indico.cern.ch/event/257000/contributions/1586340/attachments/451105/625487/SingleMuTriggerEff_10June_updated.pdf
+    muSF = 1.0
+    if abs(muEta) < 0.9 :
+        muSF = 0.98299 * 0.9925
+    elif abs(muEta) < 1.2 :
+        muSF = 0.9604 * 0.9928
+    else :
+        muSF = 0.9955 * 0.9960
+
+
+    return float(muSF)

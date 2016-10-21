@@ -3,6 +3,7 @@ import FWCore.ParameterSet.Config as cms
 from FWCore.ParameterSet.VarParsing import VarParsing
 options = VarParsing('analysis')
 options.register('runOnData', 0, VarParsing.multiplicity.singleton, VarParsing.varType.bool, "Flag for data (True) or MC (False), used to decide whether to apply b-tagging SF")
+options.register('runWithJEC', 1, VarParsing.multiplicity.singleton, VarParsing.varType.bool, "Flag for whether to include JEC systematics")
 # options.register('JES', 'nominal', VarParsing.multiplicity.singleton, VarParsing.varType.string, "Flag for Jet Energy Scale. Options are nominal (off), up, and down - forced to nominal for data")
 # options.register('JER', 'nominal', VarParsing.multiplicity.singleton, VarParsing.varType.string, "Flag for Jet Energy Resolution Smearing. Options are nominal, up, and down - forced to nominal for data")
 # options.register('includePDF', 0, VarParsing.multiplicity.singleton, VarParsing.varType.bool, "Flag for if to include PDF Weights. If you include make sure you have done scram setup lhapdffull first")
@@ -55,13 +56,13 @@ if options.runOnData:
 		jec_prepend+'Winter14_V5_DATA_L2L3Residual_AK7PFchs.txt',
 		jec_prepend+'Winter14_V5_DATA_Uncertainty_AK7PFchs.txt'
 	])
-	theJecPayloads_AK5 = cms.vstring([
-		jec_prepend+'Winter14_V5_DATA_L1FastJet_AK5PFchs.txt',
-		jec_prepend+'Winter14_V5_DATA_L2Relative_AK5PFchs.txt',
-		jec_prepend+'Winter14_V5_DATA_L3Absolute_AK5PFchs.txt',
-		jec_prepend+'Winter14_V5_DATA_L2L3Residual_AK5PFchs.txt',
-		jec_prepend+'Winter14_V5_DATA_Uncertainty_AK5PFchs.txt'
-	])
+	# theJecPayloads_AK5 = cms.vstring([
+	# 	jec_prepend+'Winter14_V5_DATA_L1FastJet_AK5PFchs.txt',
+	# 	jec_prepend+'Winter14_V5_DATA_L2Relative_AK5PFchs.txt',
+	# 	jec_prepend+'Winter14_V5_DATA_L3Absolute_AK5PFchs.txt',
+	# 	jec_prepend+'Winter14_V5_DATA_L2L3Residual_AK5PFchs.txt',
+	# 	jec_prepend+'Winter14_V5_DATA_Uncertainty_AK5PFchs.txt'
+	# ])
 else:
 	theJecPayloads_AK7 = cms.vstring([
 		jec_prepend+'START53_V27_L1FastJet_AK7PFchs.txt',
@@ -69,12 +70,12 @@ else:
 		jec_prepend+'START53_V27_L3Absolute_AK7PFchs.txt',
 		jec_prepend+'START53_V27_Uncertainty_AK7PFchs.txt'
 	])
-	theJecPayloads_AK5 = cms.vstring([
-		jec_prepend+'START53_V27_L1FastJet_AK5PFchs.txt',
-		jec_prepend+'START53_V27_L2Relative_AK5PFchs.txt',
-		jec_prepend+'START53_V27_L3Absolute_AK5PFchs.txt',
-		jec_prepend+'START53_V27_Uncertainty_AK5PFchs.txt'
-	])
+	# theJecPayloads_AK5 = cms.vstring([
+	# 	jec_prepend+'START53_V27_L1FastJet_AK5PFchs.txt',
+	# 	jec_prepend+'START53_V27_L2Relative_AK5PFchs.txt',
+	# 	jec_prepend+'START53_V27_L3Absolute_AK5PFchs.txt',
+	# 	jec_prepend+'START53_V27_Uncertainty_AK5PFchs.txt'
+	# ])
 
 # Run:
 process = cms.Process("jhu")
@@ -166,8 +167,10 @@ process.pdfWeights = cms.EDProducer("PdfWeightProducer",
 	FixPOWHEG = cms.untracked.string("CT10.LHgrid"),
 	GenTag = cms.untracked.InputTag("prunedGenParticles"),
 	PdfInfoTag = cms.untracked.InputTag("generator"),
-	PdfSetNames = cms.untracked.vstring("MSTW2008nnlo68cl.LHgrid",
-										"NNPDF23_nnlo_as_0118.LHgrid"))
+	# PdfSetNames = cms.untracked.vstring("CT10.LHgrid"))
+	PdfSetNames = cms.untracked.vstring("MSTW2008nnlo68cl.LHgrid"))
+	# 									"cteq61.LHgrid"))
+										# "NNPDF23_nnlo_as_0118.LHgrid"))
 
 process.MessageLogger.cerr.FwkReport.reportEvery = 100
 process.p = cms.Path(
@@ -183,7 +186,7 @@ process.p = cms.Path(
 			# process.jhuHep*
 			# process.jhuAk5)
 
-if not options.runOnData:
+if not options.runOnData and options.runWithJEC:
 	process.p *= process.jhuCa8JERup
 	process.p *= process.jhuCa8ppJERup
 	process.p *= process.jhuCa8JERdn
@@ -192,6 +195,8 @@ if not options.runOnData:
 	process.p *= process.jhuCa8ppJESup
 	process.p *= process.jhuCa8JESdn
 	process.p *= process.jhuCa8ppJESdn
+
+print process.p
 
 #Worried about space, so only keep generator info and trigger info if the nominal sample, not for JES/JER
 # toKeep = cms.untracked.vstring(

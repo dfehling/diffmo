@@ -9,7 +9,7 @@ import sys
 from Analysis.Tools.JetTools import *
 
 class tree_maker:
-    def __init__(self, outputname, triggerFileStr, useTrigger, pileupFileStr, usePileup, usePDF, isMC, unfoldWeight, invMassCut, doUnfold):
+    def __init__(self, outputname, triggerFileStr, useTrigger, pileupFileStr, usePileup, usePDF, isMC, unfoldWeight, invMassCut, doUnfold, syst):
         # load all the event info:
         # self.out_info = 0
         self.name = outputname
@@ -22,6 +22,7 @@ class tree_maker:
         self.unfoldWeight = unfoldWeight
         self.invMassCut = invMassCut
         self.doUnfold = doUnfold
+        self.syst = syst
 
         self.btagSF = 1.08513350715
         self.nsubSF = 0.814651566377
@@ -30,6 +31,7 @@ class tree_maker:
             self.useTrigger = False
             self.usePileup = False
             self.usePDF = False
+            self.syst = ""
 
         #General Quantities
         #N Primary Vertices
@@ -49,41 +51,41 @@ class tree_maker:
         #Pruned Jet Collection
         #We need this for CSV values and subjet CSV values
         self.prunedHandle = Handle("vector<ROOT::Math::LorentzVector<ROOT::Math::PtEtaPhiM4D<double> > > " )
-        self.prunedLabel  = ( "jhuCa8pp", "PrunedCA8CORR" )
+        self.prunedLabel  = ( "jhuCa8pp"+syst, "PrunedCA8CORR" )
 
         #Pruned Uncorrected Jet Collection
         #Do we need to compare the uncorrected jets to truth?
         self.prunedUCHandle = Handle("vector<ROOT::Math::LorentzVector<ROOT::Math::PtEtaPhiM4D<double> > > " )
-        self.prunedUCLabel  = ( "jhuCa8pp", "PrunedCA8" )
+        self.prunedUCLabel  = ( "jhuCa8pp"+syst, "PrunedCA8" )
 
         #Btagging CSV values
         self.CSVHandle = Handle( "std::vector<double>" )
-        self.CSVLabel  = ( "jhuCa8pp", "PrunedCA8csv" )
+        self.CSVLabel  = ( "jhuCa8pp"+syst, "PrunedCA8csv" )
 
         #Subjet btagging CSV values
         self.subjet1CSVHandle = Handle( "std::vector<double>" )
-        self.subjet1CSVLabel  = ( "jhuCa8pp", "PrunedCA8sub0csv" )
+        self.subjet1CSVLabel  = ( "jhuCa8pp"+syst, "PrunedCA8sub0csv" )
         self.subjet2CSVHandle = Handle( "std::vector<double>" )
-        self.subjet2CSVLabel  = ( "jhuCa8pp", "PrunedCA8sub1csv" )
+        self.subjet2CSVLabel  = ( "jhuCa8pp"+syst, "PrunedCA8sub1csv" )
         self.subjet3CSVHandle = Handle( "std::vector<double>" )
-        self.subjet3CSVLabel  = ( "jhuCa8pp", "PrunedCA8sub2csv" )
+        self.subjet3CSVLabel  = ( "jhuCa8pp"+syst, "PrunedCA8sub2csv" )
         self.subjet4CSVHandle = Handle( "std::vector<double>" )
-        self.subjet4CSVLabel  = ( "jhuCa8pp", "PrunedCA8sub3csv" )
+        self.subjet4CSVLabel  = ( "jhuCa8pp"+syst, "PrunedCA8sub3csv" )
 
         #Unpruned Jet collection
         #We need this to get N-subjettiness
         self.unprunedHandle = Handle("vector<ROOT::Math::LorentzVector<ROOT::Math::PtEtaPhiM4D<double> > > ")
-        self.unprunedLabel  = ( "jhuCa8", "UnprunedCA8CORR" )
+        self.unprunedLabel  = ( "jhuCa8"+syst, "UnprunedCA8CORR" )
 
         #N-Subjettiness(tau)
         self.t1Handle = Handle( "std::vector<double>" )
-        self.t1Label  = ("jhuCa8", "UnprunedCA8tau1")
+        self.t1Label  = ("jhuCa8"+syst, "UnprunedCA8tau1")
         self.t2Handle = Handle( "std::vector<double>" )
-        self.t2Label  = ("jhuCa8", "UnprunedCA8tau2")
+        self.t2Label  = ("jhuCa8"+syst, "UnprunedCA8tau2")
         self.t3Handle = Handle( "std::vector<double>" )
-        self.t3Label  = ("jhuCa8", "UnprunedCA8tau3")
+        self.t3Label  = ("jhuCa8"+syst, "UnprunedCA8tau3")
         self.t4Handle = Handle( "std::vector<double>" )
-        self.t4Label  = ("jhuCa8", "UnprunedCA8tau4")
+        self.t4Label  = ("jhuCa8"+syst, "UnprunedCA8tau4")
 
         #Trigger
         self.triggerHandle = Handle( "edm::TriggerResults" )
