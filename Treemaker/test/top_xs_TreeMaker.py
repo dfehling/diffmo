@@ -172,6 +172,9 @@ class tree_maker:
         self.jet2bTagged = array('i', [-1])
 
         self.htSum = array('f', [-1.0])
+        self.unfoldWt = array('f', [1.0])
+        self.btagWt = array('f', [1.0])
+        self.nsubWt = array('f', [1.0])
         self.triggerWeight = array('f', [1.0])
         self.pileupWeight = array('f', [1.0])
         self.pdfWeight = array('f', [1.0])
@@ -231,6 +234,9 @@ class tree_maker:
         self.treeVars.Branch('htSum', self.htSum, 'htSum/F')
         self.treeVars.Branch('triggerWeight', self.triggerWeight, 'triggerWeight/F')
         self.treeVars.Branch('pileupWeight', self.pileupWeight, 'pileupWeight/F')
+        self.treeVars.Branch('unfoldWt', self.unfoldWt, 'unfoldWt/F')
+        self.treeVars.Branch('btagWt', self.btagWt, 'btagWt/F')
+        self.treeVars.Branch('nsubWt', self.nsubWt, 'nsubWt/F')
         self.treeVars.Branch('pdfWeight', self.pdfWeight, 'pdfWeight/F')
         self.treeVars.Branch('pdfWeightNom', self.pdfWeightNom, 'pdfWeightNom/F')
         self.treeVars.Branch('pdfWeightUp', self.pdfWeightUp, 'pdfWeightUp/F')
@@ -374,6 +380,7 @@ class tree_maker:
 
         #Include pileup reweighting for the response matrix
         weight = 0
+        self.unfoldWt[0] = self.unfoldWeight
         weight = self.unfoldWeight * self.pileupWeight[0]
 
         #PDF
@@ -790,6 +797,8 @@ class tree_maker:
         if self.jet1tau32[0] < 0.55:
             isNsubTag = 1
         nsubWt = math.pow(self.nsubSF,isNsubTag)
+        self.btagWt[0] = btagWt
+        self.nsubWt[0] = nsubWt
         #Final weight to be put into response matrix. Shouldn't matter if btagged or pass/fail tau32
         weight = weight * self.unfoldWeight * btagWt * nsubWt
         self.unfoldWeightUsed[0]=weight
@@ -867,6 +876,9 @@ class tree_maker:
 
         self.htSum[0] = -1.0
         self.triggerWeight[0] = 1.0
+        self.unfoldWt[0] = 1.0
+        self.btagWt[0] = 1.0
+        self.nsubWt[0] = 1.0
         self.pdfWeight[0] = 1.0
         self.pileupWeight[0] = 1.0
         self.pdfWeightNom[0] = 1.0
