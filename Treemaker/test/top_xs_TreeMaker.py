@@ -800,7 +800,7 @@ class tree_maker:
         self.btagWt[0] = btagWt
         self.nsubWt[0] = nsubWt
         #Final weight to be put into response matrix. Shouldn't matter if btagged or pass/fail tau32
-        weight = weight * self.unfoldWeight * btagWt * nsubWt
+        # weight = weight * self.unfoldWeight * btagWt * nsubWt
         weight = weight * btagWt * nsubWt
         self.unfoldWeightUsed[0]=weight
 
