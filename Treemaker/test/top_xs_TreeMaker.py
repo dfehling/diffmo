@@ -490,7 +490,8 @@ class tree_maker:
         # doUnfold = False
 
         # if self.isMC == True and self.unfoldWeight > 0:
-        if self.doUnfold == True:
+        # if self.doUnfold == True:
+        if self.isMC == True:
             event.getByLabel( self.genParticlesLabel, self.genParticlesHandle )
             genParticles  = self.genParticlesHandle.product()
             
