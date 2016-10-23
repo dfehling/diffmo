@@ -207,6 +207,7 @@ toKeep = cms.untracked.vstring(
     'drop *',
     'keep *_jhu*_*_*',
     'keep *_*prunedGenParticles*_*_*',
+    'keep *_*generator*_*_*',
     'keep *_*ca8GenJetsNoNu*_*_*',
     # 'keep *_*caFilteredGenJetsNoNu*_*_*',
     # 'keep *_*caPrunedGen*_*_*',
