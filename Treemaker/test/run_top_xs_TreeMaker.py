@@ -83,12 +83,17 @@ parser.add_option('--includePileup', metavar='N', type='int', action='store',
 parser.add_option('--includePDF', metavar='N', type='int', action='store',
                     default=0,
                     dest='includePDF',
-                    help='Whether to include PDF reweighting. (1 for nominal weighting, >1 for PDF up, <0 for PDF down')
+                    help='Whether to include PDF reweighting. (0 for nominal weighting, >0 for PDF up, <0 for PDF down')
 
 parser.add_option('--useSyst', metavar='N', type='string', action='store',
                     default="",
                     dest='useSyst',
                     help='Which systematic (JERup,JERdn,JESup,JERdn) to run over. Should be blank for data')
+
+parser.add_option('--isMCatNLO', metavar='N', type='int', action='store',
+                    default=0,
+                    dest='isMCatNLO',
+                    help='Whether we are running on MC@NLO and need to use the generator weights')
 
 
 
@@ -120,7 +125,7 @@ events = Events (files)
 ntotal = events.size()
    
 analyzer = tree_maker(options.outfile, options.triggerFile, options.includeTrigger, options.pileupFile, options.includePileup, options.includePDF, 
-                        options.isMC, options.unfoldWeight, options.invMassCut, options.doUnfold, options.useSyst)
+                        options.isMC, options.unfoldWeight, options.invMassCut, options.doUnfold, options.useSyst, options.isMCatNLO)
 
 count = 0
 print "Start looping"

@@ -9,7 +9,7 @@ import sys
 from Analysis.Tools.JetTools import *
 
 class tree_maker:
-    def __init__(self, outputname, triggerFileStr, useTrigger, pileupFileStr, usePileup, usePDF, isMC, unfoldWeight, invMassCut, doUnfold, syst):
+    def __init__(self, outputname, triggerFileStr, useTrigger, pileupFileStr, usePileup, usePDF, isMC, unfoldWeight, invMassCut, doUnfold, syst, isMCatNLO):
         # load all the event info:
         # self.out_info = 0
         self.name = outputname
@@ -23,6 +23,7 @@ class tree_maker:
         self.invMassCut = invMassCut
         self.doUnfold = doUnfold
         self.syst = syst
+        self.isMCatNLO = isMCatNLO
 
         self.btagSF = 1.08513350715
         self.nsubSF = 0.814651566377
@@ -32,6 +33,7 @@ class tree_maker:
             self.usePileup = False
             self.usePDF = False
             self.syst = ""
+            self.isMCatNLO = False
 
         #General Quantities
         #N Primary Vertices
@@ -98,6 +100,10 @@ class tree_maker:
         #PDF
         self.pdfWeightHandle = Handle( "std::vector<double>" )
         self.pdfWeightLabel = ( "pdfWeights", "CT10" )
+
+        #MC@NLO weights
+        self.geninfoHandle = Handle( "GenEventInfoProduct" )
+        self.geninfoLabel = ( "generator" )
 
         self.__book__()
 
@@ -182,6 +188,7 @@ class tree_maker:
         self.pdfWeightUp = array('f', [1.0])
         self.pdfWeightDown = array('f', [1.0])
         self.unfoldWeightUsed = array('f', [1.0])
+        self.mcatnloWeight = array('f', [0.0])
 
         self.pass400pt = array('f', [-1.0])
         self.pass750pt = array('f', [-1.0])
@@ -242,6 +249,7 @@ class tree_maker:
         self.treeVars.Branch('pdfWeightUp', self.pdfWeightUp, 'pdfWeightUp/F')
         self.treeVars.Branch('pdfWeightDown', self.pdfWeightDown, 'pdfWeightDown/F')
         self.treeVars.Branch('unfoldWeightUsed', self.unfoldWeightUsed, 'unfoldWeightUsed/F')
+        self.treeVars.Branch('mcatnloWeight', self.mcatnloWeight, 'mcatnloWeight/F')
 
         self.Mtt = array('f', [-1.0])
         self.jetangle = array('f', [-10.0])
@@ -343,7 +351,6 @@ class tree_maker:
         npv = self.npvHandle.product()[0]
         metPt = self.metPtHandle.product()[0]
         metPhi = self.metPhiHandle.product()[0]
-
        
         #Save information about trigger paths so we can calculate the trigger sf later
         event.getByLabel (self.triggerLabel, self.triggerHandle)
@@ -382,6 +389,16 @@ class tree_maker:
         weight = 0
         self.unfoldWt[0] = self.unfoldWeight
         weight = self.unfoldWeight * self.pileupWeight[0]
+
+        #Include MC@NLO weights
+        if self.isMCatNLO:
+            event.getByLabel(self.geninfoLabel, self.geninfoHandle)
+            geninfo = geninfoHandle.product()
+            geninfo_weight = geninfo.weight()
+            self.mcatnloWeight[0] = geninfo_weight
+
+            if self.mcatnloWeight[0] < 0:
+                weight = weight * -1.0
 
         #PDF
         #If present and in MC, calculate PDF to scale up and down. Otherwise return weight = 1
@@ -424,7 +441,7 @@ class tree_maker:
 
             self.pdfWeightUp[0] = 1.0 + sqrt(tempPdfWeightUp)
             self.pdfWeightDown[0] = 1.0 - sqrt(tempPdfWeightDown)
-            if self.usePDF>1:
+            if self.usePDF>0:
                 self.pdfWeight[0] = self.pdfWeightUp[0]
             elif self.usePDF<0:
                 self.pdfWeight[0] = self.pdfWeightDown[0]
@@ -703,13 +720,15 @@ class tree_maker:
         #Make sure matching is correct for jet1
         if jet1matchIndex==-1 or jet1matchIndex_pj==-1 or jet1matchIndex_ucPJ==-1:
             if self.doUnfold and self.isGenHadronic[0] == 1:
-                self.response.Miss(self.genPartonJet1pt[0], self.unfoldWeight)
+                # self.response.Miss(self.genPartonJet1pt[0], self.unfoldWeight)
+                self.response.Miss(self.genPartonJet1pt[0], weight)
             return
         
         #Make sure matching is correct for jet2
         if jet2matchIndex==-1 or jet2matchIndex_pj==-1 or jet2matchIndex_ucPJ==-1:
             if self.doUnfold and self.isGenHadronic[0] == 1:
-                self.response.Miss(self.genPartonJet1pt[0], self.unfoldWeight)
+                # self.response.Miss(self.genPartonJet1pt[0], self.unfoldWeight)
+                self.response.Miss(self.genPartonJet1pt[0], weight)
             return
         
         #Events with valid ca-other jet matches
@@ -721,11 +740,13 @@ class tree_maker:
         #Nsubjettiness
         if Tau2[jet1matchIndex] == 0 or Tau2[jet2matchIndex] == 0:
             if self.doUnfold and self.isGenHadronic[0] == 1:
-                self.response.Miss(self.genPartonJet1pt[0], self.unfoldWeight)
+                # self.response.Miss(self.genPartonJet1pt[0], self.unfoldWeight)
+                self.response.Miss(self.genPartonJet1pt[0], weight)
             return
         if Tau1[jet1matchIndex] == 0 or Tau1[jet2matchIndex] == 0:
             if self.doUnfold and self.isGenHadronic[0] == 1:
-                self.response.Miss(self.genPartonJet1pt[0], self.unfoldWeight)
+                # self.response.Miss(self.genPartonJet1pt[0], self.unfoldWeight)
+                self.response.Miss(self.genPartonJet1pt[0], weight)
             return
 
         self.jet1tau1[0] = Tau1[jet1matchIndex]
@@ -887,6 +908,7 @@ class tree_maker:
         self.pdfWeightUp[0] = 1.0
         self.pdfWeightDown[0] = 1.0
         self.unfoldWeightUsed[0] = 1.0
+        self.mcatnloWeight[0] = 0.0
 
         self.Mtt[0] = -1.0
         self.jetangle[0] = -10.0
