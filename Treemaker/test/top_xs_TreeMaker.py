@@ -393,7 +393,7 @@ class tree_maker:
         #Include MC@NLO weights
         if self.isMCatNLO:
             event.getByLabel(self.geninfoLabel, self.geninfoHandle)
-            geninfo = geninfoHandle.product()
+            geninfo = self.geninfoHandle.product()
             geninfo_weight = geninfo.weight()
             self.mcatnloWeight[0] = geninfo_weight
 
