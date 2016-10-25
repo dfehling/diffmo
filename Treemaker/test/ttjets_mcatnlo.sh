@@ -8,10 +8,11 @@ weight=0.15294
 num_jobs=20
 
 for i in `seq $num_jobs`;
+do
 
 python run_top_xs_TreeMaker.py --dirs='/uscmst1b_scratch/lpc1/3DayLifetime/dfehling/mcatnlo/'  --outfile=output/ttjets_mcatnlo_252_pdfup_sec_${i} --sec=${i} --totalSec=$num_jobs --isMC=1 --includePDF=1 --unfoldWeight=$weight   --doUnfold=1 --isMCatNLO=1 &
+
 python run_top_xs_TreeMaker.py --dirs='/uscmst1b_scratch/lpc1/3DayLifetime/dfehling/mcatnlo/'  --outfile=output/ttjets_mcatnlo_252_pdfdn_sec_${i} --sec=${i} --totalSec=$num_jobs --isMC=1 --includePDF=-1 --unfoldWeight=$weight   --doUnfold=1 --isMCatNLO=1 &
-do
 for s in "" "JERup" "JERdn" "JESup" "JESdn"
 do
 

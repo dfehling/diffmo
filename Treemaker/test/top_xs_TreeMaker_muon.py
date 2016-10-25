@@ -8,11 +8,13 @@ import sys
 from Analysis.Tools.JetTools import *
 
 class tree_maker:
-    def __init__(self, outputname, triggerFileStr, useTrigger, pileupFileStr, usePileup, usePDF, isMC, unfoldWeight, invMassCut, doUnfold):
+    # def __init__(self, outputname, triggerFileStr, useTrigger, pileupFileStr, usePileup, usePDF, isMC, unfoldWeight, invMassCut, doUnfold):
+    def __init__(self, outputname, triggerFileStr, useTrigger, pileupFileStr, usePileup, usePDF, isMC, unfoldWeight, invMassCut, doUnfold, syst, isMCatNLO):
+
         # load all the event info:
         # self.out_info = 0
         self.name = outputname
-        # self.triggerFileStr = triggerFileStr
+        self.triggerFileStr = triggerFileStr
         self.useTrigger = useTrigger
         self.pileupFileStr = pileupFileStr
         self.usePileup = usePileup
@@ -22,6 +24,7 @@ class tree_maker:
         # self.unfoldWeight = unfoldWeight
         self.invMassCut = invMassCut
         # self.doUnfold = doUnfold
+        self.isMCatNLO = isMCatNLO
 
         #General Quantities
         #N Primary Vertices
@@ -92,6 +95,10 @@ class tree_maker:
         self.muonIsTightHandle = Handle( "vector<unsigned int>" )
         self.muonIsTightLabel = ( "jhuMuonPFlow", "muonistight" )
 
+        #MC@NLO weights
+        self.geninfoHandle = Handle( "GenEventInfoProduct" )
+        self.geninfoLabel = ( "generator" )
+
         self.__book__()
 
     def __book__(self):
@@ -105,6 +112,14 @@ class tree_maker:
             self.pileup.SetName('pileup')
             ROOT.SetOwnership( self.pileup, False )
             self.usePileup = True
+
+        if (self.triggerFileStr != ''):
+            self.triggerFile = ROOT.TFile(self.triggerFileStr + ".root")
+            self.triggerFile.cd()
+            self.trigger = self.triggerFile.Get("trigger").Clone()
+            self.trigger.SetName('trigger')
+            ROOT.SetOwnership( self.trigger, False )
+            self.useTrigger = True
 
         print "Booking Histograms and Trees..."
         self.f = ROOT.TFile( self.name + ".root", "recreate" )
@@ -152,6 +167,8 @@ class tree_maker:
         self.htSum = array('f', [-1.0])
         self.triggerWeight = array('f', [1.0])
         self.pileupWeight = array('f', [1.0])
+        self.mcatnloWeight = array('f', [0.0])
+        self.mcatnloWeightNorm = array('f', [0.0])
 
         self.passTriggerPt = array('f', [-1.0])
         self.failTriggerPt = array('f', [-1.0])
@@ -220,6 +237,8 @@ class tree_maker:
         self.treeVars.Branch('htSum', self.htSum, 'htSum/F')
         self.treeVars.Branch('triggerWeight', self.triggerWeight, 'triggerWeight/F')
         self.treeVars.Branch('pileupWeight', self.pileupWeight, 'pileupWeight/F')
+        self.treeVars.Branch('mcatnloWeight', self.mcatnloWeight, 'mcatnloWeight/F')
+        self.treeVars.Branch('mcatnloWeightNorm', self.mcatnloWeightNorm, 'mcatnloWeightNorm/F')
 
         self.treeVars.Branch('passTriggerPt', self.passTriggerPt, 'passTriggerPt/F')
         self.treeVars.Branch('failTriggerPt', self.failTriggerPt, 'failTriggerPt/F')
@@ -337,6 +356,18 @@ class tree_maker:
         else:
             self.pileupWeight[0] = 1.0
 
+        #Include MC@NLO weights
+        if self.isMCatNLO:
+            event.getByLabel(self.geninfoLabel, self.geninfoHandle)
+            geninfo = self.geninfoHandle.product()
+            geninfo_weight = geninfo.weight()
+            self.mcatnloWeight[0] = geninfo_weight
+
+            if self.mcatnloWeight[0] < 0:
+                self.mcatnloWeightNorm[0] = -1
+            else:
+                self.mcatnloWeightNorm[0] = 1
+
 
         if len(muons) == 0:
             return
@@ -364,8 +395,6 @@ class tree_maker:
         self.muonPhi[0] = muons[0].Phi()
         self.muonMass[0] = .1056583715
 
-        if self.useTrigger:
-            self.triggerWeight[0] = getMuonSF(self.muonEta[0])
 
         self.muonCharge[0] = muonCharge[0]
         self.muonIso[0] = muonIso[0]
@@ -430,6 +459,16 @@ class tree_maker:
         else:
             self.failTriggerPt[0] = ca1.Pt()
         
+        #Fill trigger weight if present
+        if self.isMC == False:
+            self.triggerWeight[0] = 1.0
+        elif self.useTrigger:
+            bin = 0
+            bin = self.trigger.FindBin(ca1.Pt())
+            self.triggerWeight[0] = self.trigger.GetBinContent(bin)
+        else:
+            self.triggerWeight[0] = getMuonSF(self.muonEta[0])
+            
         #Match unpruned jets with pruned - so we have both subjet btagging and nsubjettiness
         #This returns the index of the jet in the first collection that matches within dr = 0.4 to the jet of the second argument
         jet1matchIndex = MatchCol(unpj, ca1)
@@ -633,8 +672,10 @@ class tree_maker:
         self.jet1topTagged[0] = -1
  
         self.htSum[0] = -1.0
-        self.triggerWeight[0] = -1.0
-        self.pileupWeight[0] = -1.0
+        self.triggerWeight[0] = 1.0
+        self.pileupWeight[0] = 1.0
+        self.mcatnloWeight[0] = 0.0
+        self.mcatnloWeightNorm[0] = 0.0
         self.passTriggerPt[0] = -1.0
         self.failTriggerPt[0] = -1.0
 
