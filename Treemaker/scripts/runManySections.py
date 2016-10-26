@@ -46,7 +46,7 @@ logSuffix = '.log'
 # condor command file
 condor = '''universe = vanilla
 Executable            = %(command)s
-Requirements          = Memory >= 199 &&OpSys == "LINUX"&& (Arch != "DUMMY" )&& Disk > 1000000
+Requirements          = OpSys == "LINUX"&& (Arch != "DUMMY" )
 Should_Transfer_Files = YES
 WhenToTransferOutput  = ON_EXIT_OR_EVICT
 Output = %(condorOutputDir)s/candelete_$(Cluster)_$(Process).stdout
