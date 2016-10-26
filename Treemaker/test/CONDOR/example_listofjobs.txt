@@ -1,0 +1,2 @@
+python run_top_xs_TreeMaker.py --dirs=/uscms_data/d3/dfehling/NTUPLES/ttjets/ --outfile=test --sec=1 --totalSec=20 --isMC=1 --includePDF=1 --includeTrigger=1 --triggerFile=trigger_eff_test --includePileup=1 --pileupFile=hadPU100nom_test --doUnfold=1 --unfoldWeight=0.22339 -N 50000
+python ./run_top_xs_TreeMaker.py --dirs=/uscms_data/d3/dfehling/NTUPLES/ttjets/ --outfile=test --sec=1 --totalSec=20 --isMC=1 --includePDF=1 --includeTrigger=1 --triggerFile=trigger_eff_test --includePileup=1 --pileupFile=hadPU100nom_test --doUnfold=1 --unfoldWeight=0.22339 -N 50000
