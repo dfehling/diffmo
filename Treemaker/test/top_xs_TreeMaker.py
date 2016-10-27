@@ -9,7 +9,7 @@ import sys
 from Analysis.Tools.JetTools import *
 
 class tree_maker:
-    def __init__(self, outputname, triggerFileStr, useTrigger, pileupFileStr, usePileup, usePDF, isMC, unfoldWeight, invMassCut, doUnfold, syst, isMCatNLO):
+    def __init__(self, outputname, triggerFileStr, useTrigger, pileupFileStr, usePileup, usePDF, isMC, unfoldWeight, invMassCut, doUnfold, syst, isMCatNLO, useCondor):
         # load all the event info:
         # self.out_info = 0
         self.name = outputname
@@ -24,6 +24,7 @@ class tree_maker:
         self.doUnfold = doUnfold
         self.syst = syst
         self.isMCatNLO = isMCatNLO
+        self.useCondor = useCondor
 
         self.btagSF = 1.08513350715
         self.nsubSF = 0.814651566377
@@ -111,7 +112,10 @@ class tree_maker:
     
         if self.isMC:
             if (self.triggerFileStr != ''):
-                self.triggerFile = ROOT.TFile(self.triggerFileStr + ".root")
+                if self.useCondor:
+                    self.triggerFile = ROOT.TFile("./tardir/" + self.triggerFileStr + ".root")
+                else:
+                    self.triggerFile = ROOT.TFile(self.triggerFileStr + ".root")
                 self.triggerFile.cd()
                 self.trigger = self.triggerFile.Get("trigger").Clone()
                 self.trigger.SetName('trigger')
@@ -119,7 +123,10 @@ class tree_maker:
                 self.useTrigger = True
                 
             if (self.pileupFileStr != ''):
-                self.pileupFile = ROOT.TFile(self.pileupFileStr + ".root")
+                if self.useCondor:
+                    self.pileupFile = ROOT.TFile(self.pileupFileStr + ".root")
+                else:
+                    self.pileupFile = ROOT.TFile(self.pileupFileStr + ".root")
                 self.pileupFile.cd()
                 self.pileup = self.pileupFile.Get("pileup").Clone()
                 self.pileup.SetName('pileup')
@@ -324,7 +331,10 @@ class tree_maker:
 
 
         if self.isMC == True and self.doUnfold == True and self.unfoldWeight != 1.0:
-            ROOT.gSystem.Load("RooUnfold-1.1.1/libRooUnfold")
+            if self.useCondor:
+                ROOT.gSystem.Load("./tardir/RooUnfold-1.1.1/libRooUnfold")
+            else:
+                ROOT.gSystem.Load("RooUnfold-1.1.1/libRooUnfold")
             # dummy histogram used only to specify dimensions for reponse matrix
             # ptbins = array('d',[0.0,200.0,400.0,500.0,600.0,700.0,800.0,1200.0,2000.0])
             ptbins = array('d',[400.0,500.0,600.0,700.0,800.0,1600.0])
