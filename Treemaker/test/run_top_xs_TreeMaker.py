@@ -95,6 +95,11 @@ parser.add_option('--isMCatNLO', metavar='N', type='int', action='store',
                     dest='isMCatNLO',
                     help='Whether we are running on MC@NLO and need to use the generator weights')
 
+parser.add_option('--useCondor', metavar='N', type='int', action='store',
+                    default=0,
+                    dest='useCondor',
+                    help='Whether we are running on the grid. Affects path to files')
+
 
 
 (options, args) = parser.parse_args()
@@ -125,7 +130,7 @@ events = Events (files)
 ntotal = events.size()
    
 analyzer = tree_maker(options.outfile, options.triggerFile, options.includeTrigger, options.pileupFile, options.includePileup, options.includePDF, 
-                        options.isMC, options.unfoldWeight, options.invMassCut, options.doUnfold, options.useSyst, options.isMCatNLO)
+                        options.isMC, options.unfoldWeight, options.invMassCut, options.doUnfold, options.useSyst, options.isMCatNLO, options.useCondor)
 
 count = 0
 print "Start looping"
