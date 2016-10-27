@@ -189,6 +189,7 @@ class tree_maker:
         self.pdfWeightDown = array('f', [1.0])
         self.unfoldWeightUsed = array('f', [1.0])
         self.mcatnloWeight = array('f', [0.0])
+        self.mcatnloWeightNorm = array('f', [0.0])
 
         self.pass400pt = array('f', [-1.0])
         self.pass750pt = array('f', [-1.0])
@@ -250,6 +251,7 @@ class tree_maker:
         self.treeVars.Branch('pdfWeightDown', self.pdfWeightDown, 'pdfWeightDown/F')
         self.treeVars.Branch('unfoldWeightUsed', self.unfoldWeightUsed, 'unfoldWeightUsed/F')
         self.treeVars.Branch('mcatnloWeight', self.mcatnloWeight, 'mcatnloWeight/F')
+        self.treeVars.Branch('mcatnloWeightNorm', self.mcatnloWeightNorm, 'mcatnloWeightNorm/F')
 
         self.Mtt = array('f', [-1.0])
         self.jetangle = array('f', [-10.0])
@@ -398,7 +400,12 @@ class tree_maker:
             self.mcatnloWeight[0] = geninfo_weight
 
             if self.mcatnloWeight[0] < 0:
-                weight = weight * -1.0
+                self.mcatnloWeightNorm[0] = -1
+            else:
+                self.mcatnloWeightNorm[0] = 1
+
+            weight = weight * self.mcatnloWeightNorm[0]
+
 
         #PDF
         #If present and in MC, calculate PDF to scale up and down. Otherwise return weight = 1
@@ -909,6 +916,7 @@ class tree_maker:
         self.pdfWeightDown[0] = 1.0
         self.unfoldWeightUsed[0] = 1.0
         self.mcatnloWeight[0] = 0.0
+        self.mcatnloWeightNorm[0] = 0.0
 
         self.Mtt[0] = -1.0
         self.jetangle[0] = -10.0
