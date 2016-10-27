@@ -113,7 +113,7 @@ class tree_maker:
         if self.isMC:
             if (self.triggerFileStr != ''):
                 if self.useCondor:
-                    self.triggerFile = ROOT.TFile("./tardir/" + self.triggerFileStr + ".root")
+                    self.triggerFile = ROOT.TFile("./tardir/CONDOR/" + self.triggerFileStr + ".root")
                 else:
                     self.triggerFile = ROOT.TFile(self.triggerFileStr + ".root")
                 self.triggerFile.cd()
@@ -124,7 +124,7 @@ class tree_maker:
                 
             if (self.pileupFileStr != ''):
                 if self.useCondor:
-                    self.pileupFile = ROOT.TFile(self.pileupFileStr + ".root")
+                    self.pileupFile = ROOT.TFile("./tardir/CONDOR/" + self.pileupFileStr + ".root")
                 else:
                     self.pileupFile = ROOT.TFile(self.pileupFileStr + ".root")
                 self.pileupFile.cd()
@@ -332,7 +332,7 @@ class tree_maker:
 
         if self.isMC == True and self.doUnfold == True and self.unfoldWeight != 1.0:
             if self.useCondor:
-                ROOT.gSystem.Load("./tardir/RooUnfold-1.1.1/libRooUnfold")
+                ROOT.gSystem.Load("./tardir/CONDOR/RooUnfold-1.1.1/libRooUnfold")
             else:
                 ROOT.gSystem.Load("RooUnfold-1.1.1/libRooUnfold")
             # dummy histogram used only to specify dimensions for reponse matrix
