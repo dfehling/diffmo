@@ -14,7 +14,7 @@ tar czvfh tarball.tgz ../CONDOR/* ../run_top_xs_TreeMaker.py ../top_xs_TreeMaker
 for i in `seq $num_jobs`;
 do
 # for s in "     " "JERup" "JERdn" "JESup" "JESdn"
-for s in "     "
+for s in ""
 do
 
 echo python ./tardir/run_top_xs_TreeMaker.py --dirs=/uscms_data/d3/dfehling/NTUPLES/ttjets/  --outfile=ttjets_powhegLT7_pdf_${s}_sec_${i} --isMC=1 --includeTrigger=0 --includePileup=0 --includePDF=1 --doUnfold=1 --unfoldWeight=$weight --totalSec=$num_jobs --isMCatNLO=0 --useCondor=1 --invMassCut=700 --sec=${i}  --useSyst=${s} >> listofjobs.txt
