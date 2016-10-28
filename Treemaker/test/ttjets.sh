@@ -1,24 +1,37 @@
 #!/bin/bash
 
 #Weight for MC 
-#Powheg <700    : 1.00/21675970*245.8*19700
-#Powheg 700-1000: 0.074/3082812*245.8*19700    : 0.074 * 1.571
-#Powheg 1000+   : 0.014/1249111*245.8*19700    : 0.014 * 3.877
+weight=0.22984      #Powheg <700     : 1.00/21675970*252.89*19700
+weight7=0.11959     #Powheg 700-1000 : 0.074/3082812*252.89*19700    : 0.074 * 1.571
+weight10=0.05584    #Powheg 1000+    : 0.014/1249111*252.89*19700    : 0.014 * 3.877
 
-weight=0.22339
-weight7=0.11623
-weight10=0.05427
+num_jobs=25
 
-num_jobs=20
+rm listofjobs.txt
+rm commands.cmd
+tar czvfh tarball.tgz ../CONDOR/* ../run_top_xs_TreeMaker.py ../top_xs_TreeMaker*.py
 
 for i in `seq $num_jobs`;
 do
+# for s in "     " "JERup" "JERdn" "JESup" "JESdn"
+for s in "     "
+do
 
-python run_top_xs_TreeMaker.py --dirs='/uscmst1b_scratch/lpc1/3DayLifetime/dfehling/full_powheg/nom/' --outfile=output/ttjets_powhegLT7_sec_${i} --sec=${i} --totalSec=$num_jobs --isMC=1 --unfoldWeight=$weight --invMassCut=700 &
-python run_top_xs_TreeMaker.py --dirs='/uscmst1b_scratch/lpc1/3DayLifetime/dfehling/full_powheg/nom/' --outfile=output/ttjets_powhegNC_sec_${i}  --sec=${i} --totalSec=$num_jobs --isMC=1 --unfoldWeight=$weight &
-python run_top_xs_TreeMaker.py --dirs='/uscms_data/d3/dfehling/NTUPLES/ttjets7/new_truth/'            --outfile=output/ttjets_powheg7_sec_${i}   --sec=${i} --totalSec=$num_jobs --isMC=1 --unfoldWeight=$weight7 &
-python run_top_xs_TreeMaker.py --dirs='/uscms_data/d3/dfehling/NTUPLES/ttjets10/new_truth/'           --outfile=output/ttjets_powheg10_sec_${i}  --sec=${i} --totalSec=$num_jobs --isMC=1 --unfoldWeight=$weight10 &
+echo python ./tardir/run_top_xs_TreeMaker.py --dirs=/uscms_data/d3/dfehling/NTUPLES/ttjets/  --outfile=ttjets_powhegLT7_pdf_${s}_sec_${i} --isMC=1 --includeTrigger=0 --includePileup=0 --includePDF=1 --doUnfold=1 --unfoldWeight=$weight --totalSec=$num_jobs --isMCatNLO=0 --useCondor=1 --invMassCut=700 --sec=${i}  --useSyst=${s} >> listofjobs.txt
+
+echo python ./tardir/run_top_xs_TreeMaker.py --dirs=/uscms_data/d3/dfehling/NTUPLES/ttjets/  --outfile=ttjets_powhegNC_pdf_${s}_sec_${i} --isMC=1 --includeTrigger=0 --includePileup=0 --includePDF=1 --doUnfold=1 --unfoldWeight=$weight --totalSec=$num_jobs --isMCatNLO=0 --useCondor=1 --sec=${i}  --useSyst=${s} >> listofjobs.txt
+
+echo python ./tardir/run_top_xs_TreeMaker.py --dirs=/uscms_data/d3/dfehling/NTUPLES/ttjets7/  --outfile=ttjets_powheg7_pdf_${s}_sec_${i} --isMC=1 --includeTrigger=0 --includePileup=0 --includePDF=1 --doUnfold=1 --unfoldWeight=$weight7 --totalSec=$num_jobs --isMCatNLO=0 --useCondor=1 --sec=${i}  --useSyst=${s} >> listofjobs.txt
+
+echo python ./tardir/run_top_xs_TreeMaker.py --dirs=/uscms_data/d3/dfehling/NTUPLES/ttjets10/  --outfile=ttjets_powheg10_pdf_${s}_sec_${i} --isMC=1 --includeTrigger=0 --includePileup=0 --includePDF=1 --doUnfold=1 --unfoldWeight=$weight10 --totalSec=$num_jobs --isMCatNLO=0 --useCondor=1 --sec=${i}  --useSyst=${s} >> listofjobs.txt
 
 done
+
+done
+
+runManySections.py --createCommandFile --cmssw --addLog --setTarball=tarball.tgz listofjobs.txt commands.cmd
+
 exit
 
+#Test job
+#python run_top_xs_TreeMaker.py --dirs=/uscms_data/d3/dfehling/NTUPLES/ttjets/ --outfile=test.root --isMC=1 --includeTrigger=0 --includePileup=0 --includePDF=1 --doUnfold=1 --unfoldWeight=0.2 --totalSec=25 --isMCatNLO=0 --sec=1  --useSyst=JERup -N 50000
