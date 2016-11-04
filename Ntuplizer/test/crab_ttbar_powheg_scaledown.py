@@ -21,6 +21,7 @@ config.Data.inputDataset = '/TT_scaledown_CT10_TuneZ2star_8TeV-powheg-tauola/asa
 config.Data.unitsPerJob = 5
 config.Data.splitting = 'FileBased'
 config.Data.outputDatasetTag = 'TTBar_Powheg_ScaleDown_v7'
+config.Data.inputDBS = 'phys03'
 
 config.section_('User')
 
